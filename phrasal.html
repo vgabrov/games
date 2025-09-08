@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -67,15 +28,6 @@
   <!-- Pre-game Menu -->
   <div id="menu-container" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
     <h1 class="text-2xl font-bold text-center mb-4">Phrasal Verb Fiasco - Setup</h1>
-    
-    <div class="mb-4">
-      <label class="block text-sm font-medium mb-2">Difficulty Level:</label>
-      <select id="difficulty" class="w-full p-2 border rounded">
-        <option value="easy">Easy (+8/-3 points)</option>
-        <option value="medium" selected>Medium (+10/-5 points)</option>
-        <option value="hard">Hard (+12/-7 points)</option>
-      </select>
-    </div>
     
     <div class="mb-4">
       <label class="block text-sm font-medium mb-2">Topic:</label>
@@ -130,7 +82,7 @@
     <button id="restart-button" class="mt-2 w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Restart Game</button>
   </div>
 
-  <!-- Audio Placeholders (replace src with your .mp3/.wav files) -->
+  <!-- Audio Placeholders -->
   <audio id="correct-sound" preload="auto">
     <source src="correct.mp3" type="audio/mpeg">
   </audio>
@@ -139,9 +91,8 @@
   </audio>
 
   <script>
-  // Scenarios (104 total: 26 general, 26 work, 26 social, 26 travel)
-  const scenarios = [
-    // General (26 scenarios)
+  // Paste your scenarios array here
+  const scenarios = [// General (26 scenarios)
     { topic: "general", text: "You need to start your car. What do you do? 🚗", emojis: "🚗🔑", choices: [
       { text: "I turn it on.", correct: true, feedback: "Nice! The car roars to life. 😎" },
       { text: "I turn it off.", correct: false, feedback: "It's already off, silly! You sit in silence. 😅" },
@@ -589,189 +540,178 @@
       { text: "I settle it in.", correct: false, feedback: "You trap everyone in silence—tense! 😆" }
     ]};
 
-    let currentScenarioIndex = 0;
-    let score = 0;
-    let selectedScenarios = [];
-    let totalQuestions = 50;
-    let timerEnabled = false;
-    let timeLimit = 15;
-    let timerInterval = null;
-    let currentTime = 0;
-    let difficulty = 'medium';
-    let topic = 'general';
+  let currentScenarioIndex = 0;
+  let score = 0;
+  let selectedScenarios = [];
+  let totalQuestions = 50;
+  let timerEnabled = false;
+  let timeLimit = 15;
+  let timerInterval = null;
+  let currentTime = 0;
+  let topic = 'general';
 
-    const correctSound = document.getElementById('correct-sound');
-    const wrongSound = document.getElementById('wrong-sound');
-    const sprite = document.getElementById('sprite');
+  const correctSound = document.getElementById('correct-sound');
+  const wrongSound = document.getElementById('wrong-sound');
+  const sprite = document.getElementById('sprite');
 
-    // Toggle timer input visibility
-    document.getElementById('timer-toggle').addEventListener('change', function() {
-      document.getElementById('timer-input').classList.toggle('hidden', !this.checked);
-    });
+  // Toggle timer input visibility
+  document.getElementById('timer-toggle').addEventListener('change', function() {
+    document.getElementById('timer-input').classList.toggle('hidden', !this.checked);
+  });
 
-    // Start game
-    document.getElementById('start-button').addEventListener('click', () => {
-      difficulty = document.getElementById('difficulty').value;
-      topic = document.getElementById('topic').value;
-      totalQuestions = Math.min(Math.max(parseInt(document.getElementById('num-questions').value) || 50, 1), 50);
-      timerEnabled = document.getElementById('timer-toggle').checked;
-      timeLimit = timerEnabled ? Math.min(Math.max(parseInt(document.getElementById('time-limit').value) || 15, 5), 60) : 15;
+  // Start game
+  document.getElementById('start-button').addEventListener('click', () => {
+    topic = document.getElementById('topic').value;
+    totalQuestions = Math.min(Math.max(parseInt(document.getElementById('num-questions').value) || 50, 1), 50);
+    timerEnabled = document.getElementById('timer-toggle').checked;
+    timeLimit = timerEnabled ? Math.min(Math.max(parseInt(document.getElementById('time-limit').value) || 15, 5), 60) : 15;
 
-      // Filter scenarios based on topic and difficulty
-      let availableScenarios = scenarios[difficulty];
-      if (topic !== 'general') {
-        availableScenarios = availableScenarios.filter(s => s.topic === topic);
-      }
-      if (availableScenarios.length === 0) {
-        alert('No scenarios available for this topic and difficulty. Try another combination.');
-        return;
-      }
-      // Repeat scenarios if not enough to meet totalQuestions
-      while (availableScenarios.length < totalQuestions) {
-        availableScenarios = availableScenarios.concat(availableScenarios);
-      }
-      selectedScenarios = shuffle(availableScenarios).slice(0, totalQuestions);
+    // Filter scenarios based on topic
+    let availableScenarios = scenarios;
+    if (topic !== 'general') {
+      availableScenarios = scenarios.filter(s => s.topic === topic);
+    }
+    if (availableScenarios.length === 0) {
+      alert('No scenarios available for this topic. Try another.');
+      return;
+    }
+    // Repeat scenarios if not enough to meet totalQuestions
+    while (availableScenarios.length < totalQuestions) {
+      availableScenarios = availableScenarios.concat(availableScenarios);
+    }
+    selectedScenarios = shuffle(availableScenarios).slice(0, totalQuestions);
 
-      currentScenarioIndex = 0;
-      score = 0;
-      document.getElementById('score-value').textContent = score;
-      document.getElementById('menu-container').classList.add('hidden');
-      document.getElementById('game-container').classList.remove('hidden');
-      loadScenario();
-    });
+    currentScenarioIndex = 0;
+    score = 0;
+    document.getElementById('score-value').textContent = score;
+    document.getElementById('menu-container').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+    loadScenario();
+  });
 
-    // Shuffle array
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
+  // Shuffle array
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  // Load scenario
+  function loadScenario() {
+    if (currentScenarioIndex >= selectedScenarios.length) {
+      endGame();
+      return;
     }
 
-    // Load scenario
-    function loadScenario() {
-      // Only end game if all questions are answered
-      if (currentScenarioIndex >= selectedScenarios.length) {
-        endGame();
-        return;
-      }
+    const scenario = selectedScenarios[currentScenarioIndex];
+    document.getElementById('scenario').textContent = scenario.text;
+    document.getElementById('scenario-emojis').textContent = scenario.emojis;
+    document.getElementById('progress-text').textContent = `Question ${currentScenarioIndex + 1}/${selectedScenarios.length}`;
+    document.getElementById('progress').style.width = `${((currentScenarioIndex + 1) / selectedScenarios.length) * 100}%`;
 
-      const scenario = selectedScenarios[currentScenarioIndex];
-      document.getElementById('scenario').textContent = scenario.text;
-      document.getElementById('scenario-emojis').textContent = scenario.emojis;
-      document.getElementById('progress-text').textContent = `Question ${currentScenarioIndex + 1}/${selectedScenarios.length}`;
-      document.getElementById('progress').style.width = `${((currentScenarioIndex + 1) / selectedScenarios.length) * 100}%`;
+    const choicesDiv = document.getElementById('choices');
+    choicesDiv.innerHTML = '';
+    shuffle(scenario.choices).forEach(choice => {
+      const button = document.createElement('button');
+      button.className = 'w-full bg-gray-200 py-2 rounded hover:bg-gray-300';
+      button.textContent = choice.text;
+      button.addEventListener('click', () => handleChoice(choice));
+      choicesDiv.appendChild(button);
+    });
 
-      const choicesDiv = document.getElementById('choices');
-      choicesDiv.innerHTML = '';
-      shuffle(scenario.choices).forEach(choice => {
-        const button = document.createElement('button');
-        button.className = 'w-full bg-gray-200 py-2 rounded hover:bg-gray-300';
-        button.textContent = choice.text;
-        button.addEventListener('click', () => handleChoice(choice));
-        choicesDiv.appendChild(button);
-      });
+    document.getElementById('feedback').classList.add('hidden');
+    document.getElementById('next-button').classList.add('hidden');
+    sprite.textContent = '🧑‍🎓';
 
-      document.getElementById('feedback').classList.add('hidden');
-      document.getElementById('next-button').classList.add('hidden');
-      sprite.textContent = '🧑‍🎓';
+    if (timerEnabled) {
+      currentTime = timeLimit;
+      document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
+      document.getElementById('timer-display').classList.remove('hidden');
+      startTimer();
+    }
+  }
 
-      if (timerEnabled) {
-        currentTime = timeLimit;
-        document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
-        document.getElementById('timer-display').classList.remove('hidden');
-        startTimer();
-      }
+  // Handle choice
+  function handleChoice(choice) {
+    clearInterval(timerInterval);
+    document.getElementById('timer-display').classList.add('hidden');
+    const feedback = document.getElementById('feedback');
+    feedback.textContent = choice.feedback;
+    feedback.classList.remove('hidden');
+
+    if (choice.correct) {
+      score += 10;
+      document.body.classList.add('flash-green');
+      sprite.textContent = '😎';
+      correctSound.play().catch(() => {});
+      setTimeout(() => document.body.classList.remove('flash-green'), 500);
+    } else {
+      score -= 5;
+      document.body.classList.add('shake');
+      sprite.textContent = '😅';
+      wrongSound.play().catch(() => {});
+      setTimeout(() => document.body.classList.remove('shake'), 500);
     }
 
-    // Handle choice
-    function handleChoice(choice) {
-      clearInterval(timerInterval);
-      document.getElementById('timer-display').classList.add('hidden');
-      const feedback = document.getElementById('feedback');
-      feedback.textContent = choice.feedback;
-      feedback.classList.remove('hidden');
+    if (score < -10) score = -10;
+    document.getElementById('score-value').textContent = score;
+    document.getElementById('next-button').classList.remove('hidden');
 
-      const points = {
-        easy: { correct: 8, wrong: -3 },
-        medium: { correct: 10, wrong: -5 },
-        hard: { correct: 12, wrong: -7 }
-      };
+    if (score <= -10) {
+      endGame();
+    }
+  }
 
-      if (choice.correct) {
-        score += points[difficulty].correct;
-        document.body.classList.add('flash-green');
-        sprite.textContent = '😎';
-        correctSound.play().catch(() => {});
-        setTimeout(() => document.body.classList.remove('flash-green'), 500);
-      } else {
-        score += points[difficulty].wrong;
-        document.body.classList.add('shake');
-        sprite.textContent = '😅';
+  // Start timer
+  function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      currentTime--;
+      document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
+      if (currentTime <= 0) {
+        clearInterval(timerInterval);
+        score -= 2;
+        if (score < -10) score = -10;
+        document.getElementById('score-value').textContent = score;
+        document.getElementById('feedback').textContent = 'Time’s up! -2 points 😓';
+        document.getElementById('feedback').classList.remove('hidden');
+        document.getElementById('next-button').classList.remove('hidden');
+        sprite.textContent = '😓';
         wrongSound.play().catch(() => {});
-        setTimeout(() => document.body.classList.remove('shake'), 500);
-      }
-
-      // Clamp score to -10 min
-      if (score < -10) score = -10;
-      document.getElementById('score-value').textContent = score;
-      document.getElementById('next-button').classList.remove('hidden');
-
-      // Only end game if score is -10 or below
-      if (score <= -10) {
-        endGame();
-      }
-    }
-
-    // Start timer
-    function startTimer() {
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        currentTime--;
-        document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
-        if (currentTime <= 0) {
-          clearInterval(timerInterval);
-          score -= 2;
-          if (score < -10) score = -10;
-          document.getElementById('score-value').textContent = score;
-          document.getElementById('feedback').textContent = 'Time’s up! -2 points 😓';
-          document.getElementById('feedback').classList.remove('hidden');
-          document.getElementById('next-button').classList.remove('hidden');
-          sprite.textContent = '😓';
-          wrongSound.play().catch(() => {});
-          if (score <= -10) {
-            endGame();
-          }
+        if (score <= -10) {
+          endGame();
         }
-      }, 1000);
-    }
+      }
+    }, 1000);
+  }
 
-    // Next scenario
-    document.getElementById('next-button').addEventListener('click', () => {
-      currentScenarioIndex++;
-      loadScenario();
-    });
+  // Next scenario
+  document.getElementById('next-button').addEventListener('click', () => {
+    currentScenarioIndex++;
+    loadScenario();
+  });
 
-    // End game
-    function endGame() {
-      clearInterval(timerInterval);
-      document.getElementById('game-container').classList.add('hidden');
-      document.getElementById('game-over').classList.remove('hidden');
-      const message = score <= -10
-        ? `Game Over! Score: ${score}. Too many mistakes! 😢 Try again?`
-        : `Game Over! Final Score: ${score}. Great job! 🎉 Play again?`;
-      document.getElementById('game-over-message').textContent = message;
-    }
+  // End game
+  function endGame() {
+    clearInterval(timerInterval);
+    document.getElementById('game-container').classList.add('hidden');
+    document.getElementById('game-over').classList.remove('hidden');
+    const message = score <= -10
+      ? `Game Over! Score: ${score}. Too many mistakes! 😢 Try again?`
+      : `Game Over! Final Score: ${score}. Great job! 🎉 Play again?`;
+    document.getElementById('game-over-message').textContent = message;
+  }
 
-    // Restart game
-    document.getElementById('restart-button').addEventListener('click', () => {
-      currentScenarioIndex = 0;
-      score = 0;
-      document.getElementById('score-value').textContent = score;
-      document.getElementById('game-over').classList.add('hidden');
-      document.getElementById('menu-container').classList.remove('hidden');
-    });
+  // Restart game
+  document.getElementById('restart-button').addEventListener('click', () => {
+    currentScenarioIndex = 0;
+    score = 0;
+    document.getElementById('score-value').textContent = score;
+    document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('menu-container').classList.remove('hidden');
+  });
   </script>
 </body>
 </html>
