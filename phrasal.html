@@ -139,135 +139,455 @@
   </audio>
 
   <script>
-    // Updated and expanded scenarios with corrections
-    const scenarios = {
-      easy: [
-        { topic: "general", text: "You need to start your car. What do you do? 🚗", emojis: "🚗🔑", choices: [
-          { text: "I turn it on.", correct: true, feedback: "Nice! The car roars to life. 😎" },
-          { text: "I turn it off.", correct: false, feedback: "It's already off, silly! You sit in silence. 😅" },
-          { text: "I turn it up.", correct: false, feedback: "You blast the radio instead of starting the engine! 🎶" },
-          { text: "I turn it down.", correct: false, feedback: "You dim the headlights... still not moving! 😴" }
-        ]},
-        { topic: "general", text: "Your room is a mess. What do you do? 🧹", emojis: "🧹🏠", choices: [
-          { text: "I clean it up.", correct: true, feedback: "Spotless room, well done! ✨" },
-          { text: "I clean it out.", correct: false, feedback: "You throw everything away, including your phone! 😱" },
-          { text: "I clean it off.", correct: false, feedback: "You wipe the walls... but the floor's still dirty! 😆" },
-          { text: "I clean it down.", correct: false, feedback: "You flood the room with water—now it's a swamp! 🌊" }
-        ]},
-        { topic: "work", text: "Your boss needs a report quickly. What do you do? 📊", emojis: "📊💼", choices: [
-          { text: "I whip it up.", correct: true, feedback: "Report done fast, boss impressed! 😊" },
-          { text: "I whip it out.", correct: false, feedback: "You dramatically pull out a whip in the meeting—chaos! 💃" },
-          { text: "I whip it off.", correct: false, feedback: "You take off your jacket instead of writing! 😆" },
-          { text: "I whip it down.", correct: false, feedback: "You scribble nonsense and spill coffee on it! 📝😵" }
-        ]},
-        { topic: "social", text: "Your friend is telling a boring story. What do you do? 😴", emojis: "😴🎉", choices: [
-          { text: "I tune it out.", correct: true, feedback: "You politely nod and daydream—story over soon! 😌" },
-          { text: "I tune it in.", correct: false, feedback: "You focus too hard and get even more bored! 😩" },
-          { text: "I tune it up.", correct: false, feedback: "You adjust the 'volume' and turn it into a sing-along! 🕺" },
-          { text: "I tune it off.", correct: false, feedback: "You pretend to mute your friend—super awkward! 😬" }
-        ]},
-        { topic: "travel", text: "You need to ask for directions at a cafe. What do you do? ☕", emojis: "☕🗺️", choices: [
-          { text: "I ask around.", correct: true, feedback: "Locals at the cafe help you find your way! 🧭" },
-          { text: "I ask out.", correct: false, feedback: "You invite the barista on a date instead of asking directions! 😳" },
-          { text: "I ask up.", correct: false, feedback: "You shout your question to everyone—too loud! 😅" },
-          { text: "I ask off.", correct: false, feedback: "You cancel asking and wander blindly! 🚫" }
-        ]},
-        { topic: "travel", text: "You arrive at a tourist hotel. What do you do first? 🏨", emojis: "🏨🛎️", choices: [
-          { text: "I check in.", correct: true, feedback: "Room key in hand—welcome to paradise! 😊" },
-          { text: "I check out.", correct: false, feedback: "You leave right away without a room! 😵" },
-          { text: "I check up.", correct: false, feedback: "You inspect the lobby ceiling for cobwebs! 😆" },
-          { text: "I check off.", correct: false, feedback: "You mark 'hotel' off your list and skip staying! 🚫" }
-        ]}
-      ],
-      medium: [
-        { topic: "general", text: "Your phone battery is low. What do you do? 📱", emojis: "📱🔋", choices: [
-          { text: "I plug it in.", correct: true, feedback: "Charging nicely—full power soon! ⚡️" },
-          { text: "I plug it up.", correct: false, feedback: "You block the port with lint—dead battery! 😖" },
-          { text: "I plug it out.", correct: false, feedback: "You unplug a stranger's charger—fight ensues! 😬" },
-          { text: "I plug it off.", correct: false, feedback: "You turn off the phone to 'save' it... oops! 😴" }
-        ]},
-        { topic: "general", text: "You need to leave a party early. What do you do? 🎈", emojis: "🎈🚪", choices: [
-          { text: "I slip out.", correct: true, feedback: "You leave unnoticed—smooth exit! 😎" },
-          { text: "I slip up.", correct: false, feedback: "You trip over a balloon and spill drinks! 😅" },
-          { text: "I slip in.", correct: false, feedback: "You sneak back in for more cake by mistake! 🥳" },
-          { text: "I slip off.", correct: false, feedback: "You doze off on the couch—invisible no more! 😴" }
-        ]},
-        { topic: "work", text: "A meeting is getting heated. What do you do? 🔥", emojis: "🔥💼", choices: [
-          { text: "I calm it down.", correct: true, feedback: "Everyone chills—meeting saved! 😊" },
-          { text: "I calm it up.", correct: false, feedback: "You make tempers rise even higher! 😣" },
-          { text: "I calm it out.", correct: false, feedback: "You herd everyone outside like cats! 🌳" },
-          { text: "I calm it off.", correct: false, feedback: "You abruptly end the meeting—unresolved! 😮" }
-        ]},
-        { topic: "social", text: "You want to join a group chat. What do you do? 💬", emojis: "💬🎉", choices: [
-          { text: "I chime in.", correct: true, feedback: "Your comment fits right in—group loves it! 😄" },
-          { text: "I chime out.", correct: false, feedback: "You mute yourself—chat ignores you! 😔" },
-          { text: "I chime up.", correct: false, feedback: "You start ringing bells in the chat! 🎤" },
-          { text: "I chime off.", correct: false, feedback: "You log off before saying anything! 🚪" }
-        ]},
-        { topic: "travel", text: "You need to exchange money at a bank. What do you do? 💸", emojis: "💸🏦", choices: [
-          { text: "I cash it in.", correct: true, feedback: "Local currency in hand—ready to spend! 💰" },
-          { text: "I cash it out.", correct: false, feedback: "You withdraw everything and cause a bank run! 💥🏦" },
-          { text: "I cash it up.", correct: false, feedback: "You try to 'cash up' like adding bills—confusion! 😵" },
-          { text: "I cash it off.", correct: false, feedback: "You dismiss the teller and leave empty-handed! 😱" }
-        ]},
-        { topic: "travel", text: "You're lost in a new city. What do you do? 🗺️", emojis: "🗺️🌆", choices: [
-          { text: "I figure it out.", correct: true, feedback: "Map in mind—you find your way! 🧭" },
-          { text: "I figure it up.", correct: false, feedback: "You climb a lamppost to 'figure up' the view! 🌳" },
-          { text: "I figure it off.", correct: false, feedback: "You give up and nap on a bench! 😴" },
-          { text: "I figure on it.", correct: false, feedback: "You expect the city to guide itself to you... still lost! 😴🗺️" }
-        ]},
-        { topic: "travel", text: "You want coffee at a busy cafe abroad. What do you do? ☕", emojis: "☕🏪", choices: [
-          { text: "I line up.", correct: true, feedback: "Your turn—espresso incoming! 😋" },
-          { text: "I line out.", correct: false, feedback: "You draw a line on the floor and confuse everyone! 📏" },
-          { text: "I line in.", correct: false, feedback: "You squeeze into the wrong queue! 😅" },
-          { text: "I line off.", correct: false, feedback: "You mark the menu off and skip ordering! 🚫" }
-        ]}
-      ],
-      hard: [
-        { topic: "general", text: "You're running out of groceries. What do you do? 🛒", emojis: "🛒🍎", choices: [
-          { text: "I stock up.", correct: true, feedback: "Pantry overflowing—prepared for weeks! 🥳" },
-          { text: "I stock out.", correct: false, feedback: "You sell your empty fridge at a yard sale! 😅" },
-          { text: "I stock in.", correct: false, feedback: "You lock the few items away from yourself! 🔒" },
-          { text: "I stock off.", correct: false, feedback: "You ignore it and order pizza forever! 😴🍕" }
-        ]},
-        { topic: "general", text: "Your team needs motivation. What do you do? 🚀", emojis: "🚀👥", choices: [
-          { text: "I fire them up.", correct: true, feedback: "Team's energized and productive! 💪" },
-          { text: "I fire them out.", correct: false, feedback: "You send the whole team home early! 😮" },
-          { text: "I fire them off.", correct: false, feedback: "You launch emails like fireworks—spam alert! 🎆" },
-          { text: "I fire them in.", correct: false, feedback: "You trap them in a tiny room for 'focus'! 🔒" }
-        ]},
-        { topic: "work", text: "A project is behind schedule. What do you do? ⏰", emojis: "⏰💼", choices: [
-          { text: "I catch up.", correct: true, feedback: "Deadlines met—team celebrates! 🚀" },
-          { text: "I catch out.", correct: false, feedback: "You expose a coworker's mistake—drama! 😣" },
-          { text: "I catch in.", correct: false, feedback: "You get tangled in red tape meetings! 😩" },
-          { text: "I catch off.", correct: false, feedback: "You doze off during overtime! 😴" }
-        ]},
-        { topic: "social", text: "You need to end a conversation politely. What do you do? 😊", emojis: "😊🎉", choices: [
-          { text: "I bow out.", correct: true, feedback: "Graceful goodbye—they understand! 😎" },
-          { text: "I bow in.", correct: false, feedback: "You keep bowing awkwardly like a robot! 😅" },
-          { text: "I bow up.", correct: false, feedback: "You puff up and challenge them to a duel! 💪" },
-          { text: "I bow off.", correct: false, feedback: "You trip and bow out the door—literally! 😬" }
-        ]},
-        { topic: "travel", text: "You need a room at a busy airport hotel. What do you do? 🏨✈️", emojis: "🏨✈️", choices: [
-          { text: "I check in.", correct: true, feedback: "Suite upgraded—restful layover! 😊" },
-          { text: "I check out.", correct: false, feedback: "You bail before registering—sleep on the floor! 😵" },
-          { text: "I check up.", correct: false, feedback: "You verify the flight schedule instead! 😆" },
-          { text: "I check off.", correct: false, feedback: "You tick 'hotel' on your list and keep flying! 🚫" }
-        ]},
-        { topic: "travel", text: "You need to cancel a tour booking. What do you do? 📅", emojis: "📅🚶", choices: [
-          { text: "I call it off.", correct: true, feedback: "Refunded and free—better plans ahead! 😊" },
-          { text: "I call it up.", correct: false, feedback: "You book an extra tour by accident! 😅" },
-          { text: "I call it out.", correct: false, feedback: "You yell at the booking agent—banned! 😣" },
-          { text: "I call it in.", correct: false, feedback: "You fake sick to skip it—guilt trip! 😳" }
-        ]},
-        { topic: "travel", text: "You want to withdraw cash at a foreign ATM. What do you do? 🏧", emojis: "🏧💳", choices: [
-          { text: "I take it out.", correct: true, feedback: "Bills dispensed—safe travels! 💵" },
-          { text: "I take it up.", correct: false, feedback: "You argue fees with the machine! 😤" },
-          { text: "I take it in.", correct: false, feedback: "You absorb the exchange rate mentally—confused! 🤯" },
-          { text: "I take it off.", correct: false, feedback: "You remove the card and leave empty-handed! 😩" }
-        ]}
-      ]
-    };
+  // Scenarios (104 total: 26 general, 26 work, 26 social, 26 travel)
+  const scenarios = [
+    // General (26 scenarios)
+    { topic: "general", text: "You need to start your car. What do you do? 🚗", emojis: "🚗🔑", choices: [
+      { text: "I turn it on.", correct: true, feedback: "Nice! The car roars to life. 😎" },
+      { text: "I turn it off.", correct: false, feedback: "It's already off, silly! You sit in silence. 😅" },
+      { text: "I turn it up.", correct: false, feedback: "You blast the radio instead of starting the engine! 🎶" },
+      { text: "I turn it down.", correct: false, feedback: "You dim the headlights... still not moving! 😴" }
+    ]},
+    { topic: "general", text: "Your room is a mess. What do you do? 🧹", emojis: "🧹🏠", choices: [
+      { text: "I clean it up.", correct: true, feedback: "Spotless room, well done! ✨" },
+      { text: "I clean it out.", correct: false, feedback: "You throw everything away, including your phone! 😱" },
+      { text: "I clean it off.", correct: false, feedback: "You wipe the walls... but the floor's still dirty! 😆" },
+      { text: "I clean it down.", correct: false, feedback: "You flood the room with water—now it's a swamp! 🌊" }
+    ]},
+    { topic: "general", text: "Your shoes are dirty. What do you do? 👟", emojis: "👟🧼", choices: [
+      { text: "I clean them off.", correct: true, feedback: "Shiny shoes, ready to step out! ✨" },
+      { text: "I clean them up.", correct: false, feedback: "You organize your shoes instead of cleaning them! 😅" },
+      { text: "I clean them out.", correct: false, feedback: "You empty your shoes... of what, socks? 😆" },
+      { text: "I clean them in.", correct: false, feedback: "You wash them inside out—soggy mess! 🌊" }
+    ]},
+    { topic: "general", text: "You want to relax with music. What do you do? 🎶", emojis: "🎶🛋️", choices: [
+      { text: "I turn it on.", correct: true, feedback: "Tunes playing, vibes perfect! 😎" },
+      { text: "I turn it off.", correct: false, feedback: "Silence reigns, but where’s the chill? 😴" },
+      { text: "I turn it up.", correct: false, feedback: "You blast it so loud, neighbors complain! 📢" },
+      { text: "I turn it down.", correct: false, feedback: "You mute it—no music, no fun! 😅" }
+    ]},
+    { topic: "general", text: "Your dog is chewing your shoes. What do you do? 🐶", emojis: "🐶👟", choices: [
+      { text: "I tell it off.", correct: true, feedback: "Dog stops, shoes saved! Good job! 🐕" },
+      { text: "I tell it up.", correct: false, feedback: "You cheer the dog to chew faster! 😱" },
+      { text: "I tell it out.", correct: false, feedback: "You send the dog outside with your shoe! 🏃" },
+      { text: "I tell it in.", correct: false, feedback: "You invite the dog to chew indoors more! 😆" }
+    ]},
+    { topic: "general", text: "You need to prepare for a picnic. What do you do? 🧺", emojis: "🧺🌳", choices: [
+      { text: "I pack it up.", correct: true, feedback: "Picnic basket ready—let’s eat! 🍎" },
+      { text: "I pack it in.", correct: false, feedback: "You cancel the picnic and stay home! 😴" },
+      { text: "I pack it off.", correct: false, feedback: "You ship the basket to Narnia! 📦" },
+      { text: "I pack it out.", correct: false, feedback: "You empty the basket—starving time! 😅" }
+    ]},
+    { topic: "general", text: "Your TV isn’t working. What do you do? 📺", emojis: "📺🔧", choices: [
+      { text: "I fix it up.", correct: true, feedback: "TV’s back on—movie night saved! 🎬" },
+      { text: "I fix it out.", correct: false, feedback: "You throw the TV out the window! 😱" },
+      { text: "I fix it in.", correct: false, feedback: "You lock the TV in a closet—why? 🔒" },
+      { text: "I fix it off.", correct: false, feedback: "You turn it off forever—no shows! 😴" }
+    ]},
+    { topic: "general", text: "Your phone battery is low. What do you do? 📱", emojis: "📱🔋", choices: [
+      { text: "I plug it in.", correct: true, feedback: "Charging nicely—full power soon! ⚡️" },
+      { text: "I plug it up.", correct: false, feedback: "You block the port with lint—dead battery! 😖" },
+      { text: "I plug it out.", correct: false, feedback: "You unplug a stranger's charger—fight ensues! 😬" },
+      { text: "I plug it off.", correct: false, feedback: "You turn off the phone to 'save' it... oops! 😴" }
+    ]},
+    { topic: "general", text: "You need to leave a party early. What do you do? 🎈", emojis: "🎈🚪", choices: [
+      { text: "I slip out.", correct: true, feedback: "You leave unnoticed—smooth exit! 😎" },
+      { text: "I slip up.", correct: false, feedback: "You trip over a balloon and spill drinks! 😅" },
+      { text: "I slip in.", correct: false, feedback: "You sneak back in for more cake by mistake! 🥳" },
+      { text: "I slip off.", correct: false, feedback: "You doze off on the couch—invisible no more! 😴" }
+    ]},
+    { topic: "general", text: "You’re cold at home. What do you do? 🥶", emojis: "🥶🔥", choices: [
+      { text: "I warm up.", correct: true, feedback: "Cozy and warm—perfect! 🥰" },
+      { text: "I warm out.", correct: false, feedback: "You step outside to warm up—freezing! ❄️" },
+      { text: "I warm off.", correct: false, feedback: "You turn off the heater—brrr! 😣" },
+      { text: "I warm in.", correct: false, feedback: "You trap heat in a jar—useless! 😆" }
+    ]},
+    { topic: "general", text: "You need to learn a new skill. What do you do? 📚", emojis: "📚🧠", choices: [
+      { text: "I pick it up.", correct: true, feedback: "Skill mastered—nice work! 🥳" },
+      { text: "I pick it out.", correct: false, feedback: "You choose a random skill and fail! 😅" },
+      { text: "I pick it off.", correct: false, feedback: "You peel off the book’s cover—oops! 😆" },
+      { text: "I pick it in.", correct: false, feedback: "You hide the skill in your brain—forgotten! 😴" }
+    ]},
+    { topic: "general", text: "Your friend left dishes in the sink. What do you do? 🍽️", emojis: "🍽️🧼", choices: [
+      { text: "I wash them up.", correct: true, feedback: "Dishes sparkling—kitchen hero! ✨" },
+      { text: "I wash them out.", correct: false, feedback: "You rinse them outside—why? 😅" },
+      { text: "I wash them off.", correct: false, feedback: "You wipe them and leave crumbs! 😆" },
+      { text: "I wash them in.", correct: false, feedback: "You soak them in a bucket—messy! 🌊" }
+    ]},
+    { topic: "general", text: "You’re late for an appointment. What do you do? ⏰", emojis: "⏰🏃", choices: [
+      { text: "I hurry up.", correct: true, feedback: "You make it just in time—phew! 😎" },
+      { text: "I hurry out.", correct: false, feedback: "You run out without your keys! 😣" },
+      { text: "I hurry off.", correct: false, feedback: "You flee in the wrong direction! 😅" },
+      { text: "I hurry in.", correct: false, feedback: "You rush into the wrong room! 😆" }
+    ]},
+    { topic: "general", text: "You need to save some money. What do you do? 💰", emojis: "💰🐷", choices: [
+      { text: "I save it up.", correct: true, feedback: "Piggy bank full—future secured! 🥳" },
+      { text: "I save it out.", correct: false, feedback: "You spend it all outside—broke! 😣" },
+      { text: "I save it off.", correct: false, feedback: "You avoid saving entirely—oops! 😅" },
+      { text: "I save it in.", correct: false, feedback: "You hide cash in a sock—lost it! 😆" }
+    ]},
+    { topic: "general", text: "You're running out of groceries. What do you do? 🛒", emojis: "🛒🍎", choices: [
+      { text: "I stock up.", correct: true, feedback: "Pantry overflowing—prepared for weeks! 🥳" },
+      { text: "I stock out.", correct: false, feedback: "You sell your empty fridge at a yard sale! 😅" },
+      { text: "I stock in.", correct: false, feedback: "You lock the few items away from yourself! 🔒" },
+      { text: "I stock off.", correct: false, feedback: "You ignore it and order pizza forever! 😴🍕" }
+    ]},
+    { topic: "general", text: "Your team needs motivation. What do you do? 🚀", emojis: "🚀👥", choices: [
+      { text: "I fire them up.", correct: true, feedback: "Team's energized and productive! 💪" },
+      { text: "I fire them out.", correct: false, feedback: "You send the whole team home early! 😮" },
+      { text: "I fire them off.", correct: false, feedback: "You launch emails like fireworks—spam alert! 🎆" },
+      { text: "I fire them in.", correct: false, feedback: "You trap them in a tiny room for 'focus'! 🔒" }
+    ]},
+    { topic: "general", text: "You’re overwhelmed with tasks. What do you do? 📋", emojis: "📋😓", choices: [
+      { text: "I sort it out.", correct: true, feedback: "Tasks organized—stress gone! 😎" },
+      { text: "I sort it up.", correct: false, feedback: "You pile tasks higher—chaos! 😣" },
+      { text: "I sort it off.", correct: false, feedback: "You ignore them all—disaster! 😅" },
+      { text: "I sort it in.", correct: false, feedback: "You hide tasks in a drawer—forgotten! 😆" }
+    ]},
+    { topic: "general", text: "You need to prepare for a big event. What do you do? 🎉", emojis: "🎉📅", choices: [
+      { text: "I gear up.", correct: true, feedback: "Ready for the event—bring it on! 🥳" },
+      { text: "I gear out.", correct: false, feedback: "You pack camping gear instead! 😅" },
+      { text: "I gear off.", correct: false, feedback: "You skip preparations—unready! 😣" },
+      { text: "I gear in.", correct: false, feedback: "You lock yourself in gear—stuck! 😆" }
+    ]},
+    { topic: "general", text: "Your car is low on fuel. What do you do? ⛽", emojis: "⛽🚗", choices: [
+      { text: "I fill it up.", correct: true, feedback: "Tank full—road trip ready! 🛣️" },
+      { text: "I fill it out.", correct: false, feedback: "You write a fuel report—useless! 😅" },
+      { text: "I fill it off.", correct: false, feedback: "You ignore it—stranded! 😣" },
+      { text: "I fill it in.", correct: false, feedback: "You pour fuel in the trunk—messy! 😆" }
+    ]},
+    { topic: "general", text: "You want to improve your fitness. What do you do? 🏋️", emojis: "🏋️💪", choices: [
+      { text: "I work out.", correct: true, feedback: "Muscles growing—fitness goals met! 💪" },
+      { text: "I work up.", correct: false, feedback: "You get overly excited and crash! 😅" },
+      { text: "I work off.", correct: false, feedback: "You skip the gym entirely! 😴" },
+      { text: "I work in.", correct: false, feedback: "You exercise indoors—cramped space! 😆" }
+    ]},
+    { topic: "general", text: "You want to tidy your bookshelf. What do you do? 📚", emojis: "📚🏠", choices: [
+      { text: "I straighten it up.", correct: true, feedback: "Books aligned—library vibes! 📖" },
+      { text: "I straighten it out.", correct: false, feedback: "You flatten the books—pancake pages! 😅" },
+      { text: "I straighten it off.", correct: false, feedback: "You ignore the mess—books fall! 😣" },
+      { text: "I straighten it in.", correct: false, feedback: "You push books into a box—hidden chaos! 😆" }
+    ]},
+    { topic: "general", text: "Your computer is slow. What do you do? 💻", emojis: "💻⏳", choices: [
+      { text: "I speed it up.", correct: true, feedback: "Computer’s zooming now—nice fix! 🚀" },
+      { text: "I speed it out.", correct: false, feedback: "You throw it out the window—crash! 😱" },
+      { text: "I speed it off.", correct: false, feedback: "You turn it off—still slow! 😴" },
+      { text: "I speed it in.", correct: false, feedback: "You cram more apps in—slower! 😅" }
+    ]},
+    { topic: "general", text: "You need to fix a leaky faucet. What do you do? 🚰", emojis: "🚰🔧", choices: [
+      { text: "I patch it up.", correct: true, feedback: "No more leaks—plumbing pro! 🛠️" },
+      { text: "I patch it out.", correct: false, feedback: "You tape it outside—flood! 🌊" },
+      { text: "I patch it off.", correct: false, feedback: "You ignore it—drip drip! 😣" },
+      { text: "I patch it in.", correct: false, feedback: "You plug it with gum—messy! 😆" }
+    ]},
+    { topic: "general", text: "You want to watch a movie at home. What do you do? 🎬", emojis: "🎬🛋️", choices: [
+      { text: "I set it up.", correct: true, feedback: "Popcorn ready, movie on—perfect night! 🍿" },
+      { text: "I set it out.", correct: false, feedback: "You screen it in the backyard—bugs join! 🦟" },
+      { text: "I set it off.", correct: false, feedback: "You trigger the fire alarm—movie ruined! 🚨" },
+      { text: "I set it in.", correct: false, feedback: "You hide the TV in a closet—no movie! 😅" }
+    ]},
+    { topic: "general", text: "Your bike has a flat tire. What do you do? 🚲", emojis: "🚲🛠️", choices: [
+      { text: "I fix it up.", correct: true, feedback: "Tire patched—ready to ride! 🚴" },
+      { text: "I fix it out.", correct: false, feedback: "You toss the tire away—no bike! 😱" },
+      { text: "I fix it off.", correct: false, feedback: "You ignore it—still flat! 😣" },
+      { text: "I fix it in.", correct: false, feedback: "You stuff the tire indoors—useless! 😆" }
+    ]},
+    { topic: "general", text: "You want to decorate your room. What do you do? 🖼️", emojis: "🖼️🏠", choices: [
+      { text: "I spruce it up.", correct: true, feedback: "Room looks amazing—decor win! ✨" },
+      { text: "I spruce it out.", correct: false, feedback: "You plant trees indoors—wild! 🌳" },
+      { text: "I spruce it off.", correct: false, feedback: "You skip decorating—boring room! 😴" },
+      { text: "I spruce it in.", correct: false, feedback: "You hide decor in a box—no style! 😅" }
+    ]},
+    // Work (26 scenarios)
+    { topic: "work", text: "Your boss needs a report quickly. What do you do? 📊", emojis: "📊💼", choices: [
+      { text: "I whip it up.", correct: true, feedback: "Report done fast, boss impressed! 😊" },
+      { text: "I whip it out.", correct: false, feedback: "You dramatically pull out a whip—chaos! 💃" },
+      { text: "I whip it off.", correct: false, feedback: "You take off your jacket instead of writing! 😆" },
+      { text: "I whip it down.", correct: false, feedback: "You scribble nonsense and spill coffee! 📝😵" }
+    ]},
+    { topic: "work", text: "A client is waiting for your call. What do you do? 📞", emojis: "📞💼", choices: [
+      { text: "I call them up.", correct: true, feedback: "Client’s happy, deal sealed! 😎" },
+      { text: "I call them off.", correct: false, feedback: "You cancel the call—deal lost! 😣" },
+      { text: "I call them out.", correct: false, feedback: "You challenge the client to a duel! 😬" },
+      { text: "I call them in.", correct: false, feedback: "You invite them to your office now—awkward! 😅" }
+    ]},
+    { topic: "work", text: "You need to organize a team meeting. What do you do? 📅", emojis: "📅👥", choices: [
+      { text: "I set it up.", correct: true, feedback: "Meeting scheduled—team aligned! 🥳" },
+      { text: "I set it off.", correct: false, feedback: "You trigger a fire alarm—chaos! 🚨" },
+      { text: "I set it out.", correct: false, feedback: "You plan it outdoors in a storm! 🌧️" },
+      { text: "I set it in.", correct: false, feedback: "You lock the meeting in a drawer! 🔒" }
+    ]},
+    { topic: "work", text: "You need to finish a presentation. What do you do? 🖥️", emojis: "🖥️📈", choices: [
+      { text: "I wrap it up.", correct: true, feedback: "Slides done, ready to shine! ✨" },
+      { text: "I wrap it out.", correct: false, feedback: "You gift-wrap it and send it away! 🎁" },
+      { text: "I wrap it off.", correct: false, feedback: "You abandon it halfway—oops! 😴" },
+      { text: "I wrap it in.", correct: false, feedback: "You hide it in a folder—forgotten! 😅" }
+    ]},
+    { topic: "work", text: "Your desk is cluttered. What do you do? 🖇️", emojis: "🖇️💼", choices: [
+      { text: "I tidy it up.", correct: true, feedback: "Desk sparkles—productivity boost! 😊" },
+      { text: "I tidy it out.", correct: false, feedback: "You throw all papers away—important ones too! 😱" },
+      { text: "I tidy it off.", correct: false, feedback: "You push everything off the desk! 😆" },
+      { text: "I tidy it in.", correct: false, feedback: "You stuff papers in a drawer—messy still! 😅" }
+    ]},
+    { topic: "work", text: "You need to review a contract. What do you do? 📜", emojis: "📜💼", choices: [
+      { text: "I look it over.", correct: true, feedback: "Contract checked—solid deal! ✅" },
+      { text: "I look it up.", correct: false, feedback: "You google the contract—wrong move! 😅" },
+      { text: "I look it out.", correct: false, feedback: "You stare out the window instead! 😴" },
+      { text: "I look it off.", correct: false, feedback: "You dismiss it without reading! 😣" }
+    ]},
+    { topic: "work", text: "You need to submit a report. What do you do? 📤", emojis: "📤💼", choices: [
+      { text: "I hand it in.", correct: true, feedback: "Report submitted—boss pleased! 😎" },
+      { text: "I hand it out.", correct: false, feedback: "You give copies to everyone—confidentiality breach! 😱" },
+      { text: "I hand it off.", correct: false, feedback: "You pass it to a random coworker! 😆" },
+      { text: "I hand it up.", correct: false, feedback: "You throw it in the air—papers everywhere! 📄" }
+    ]},
+    { topic: "work", text: "A meeting is getting heated. What do you do? 🔥", emojis: "🔥💼", choices: [
+      { text: "I calm it down.", correct: true, feedback: "Everyone chills—meeting saved! 😊" },
+      { text: "I calm it up.", correct: false, feedback: "You make tempers rise even higher! 😣" },
+      { text: "I calm it out.", correct: false, feedback: "You herd everyone outside like cats! 🌳" },
+      { text: "I calm it off.", correct: false, feedback: "You abruptly end the meeting—unresolved! 😮" }
+    ]},
+    { topic: "work", text: "You need to update a project plan. What do you do? 📈", emojis: "📈💼", choices: [
+      { text: "I write it up.", correct: true, feedback: "Plan updated—team on track! ✅" },
+      { text: "I write it out.", correct: false, feedback: "You copy it by hand—time wasted! 😅" },
+      { text: "I write it off.", correct: false, feedback: "You dismiss the plan—project fails! 😣" },
+      { text: "I write it in.", correct: false, feedback: "You scribble it in a notebook—lost! 😆" }
+    ]},
+    { topic: "work", text: "You need to end a long meeting. What do you do? 🕒", emojis: "🕒💼", choices: [
+      { text: "I wrap it up.", correct: true, feedback: "Meeting done—time saved! 😎" },
+      { text: "I wrap it out.", correct: false, feedback: "You send everyone home—confused! 😅" },
+      { text: "I wrap it off.", correct: false, feedback: "You cancel it halfway—chaos! 😣" },
+      { text: "I wrap it in.", correct: false, feedback: "You trap everyone in discussion—stuck! 😆" }
+    ]},
+    { topic: "work", text: "You need to find a file on your computer. What do you do? 💻", emojis: "💻📂", choices: [
+      { text: "I look it up.", correct: true, feedback: "File found—work continues! 🥳" },
+      { text: "I look it over.", correct: false, feedback: "You skim random files—wrong one! 😅" },
+      { text: "I look it out.", correct: false, feedback: "You stare at the screen blankly! 😴" },
+      { text: "I look it off.", correct: false, feedback: "You ignore the search—lost file! 😣" }
+    ]},
+    { topic: "work", text: "You need to train a new employee. What do you do? 👨‍🏫", emojis: "👨‍🏫💼", choices: [
+      { text: "I show them around.", correct: true, feedback: "Newbie oriented—great mentor! 😊" },
+      { text: "I show them out.", correct: false, feedback: "You escort them out—fired already? 😱" },
+      { text: "I show them off.", correct: false, feedback: "You brag about them—awkward! 😅" },
+      { text: "I show them in.", correct: false, feedback: "You lock them in the office—trapped! 😆" }
+    ]},
+    { topic: "work", text: "You need to reject a bad proposal. What do you do? 📝", emojis: "📝🚫", choices: [
+      { text: "I turn it down.", correct: true, feedback: "Proposal rejected—smart move! ✅" },
+      { text: "I turn it up.", correct: false, feedback: "You amplify the bad idea—disaster! 😣" },
+      { text: "I turn it off.", correct: false, feedback: "You ignore it completely—missed chance! 😅" },
+      { text: "I turn it in.", correct: false, feedback: "You submit it as your own—oops! 😆" }
+    ]},
+    { topic: "work", text: "You need to prepare a budget. What do you do? 💸", emojis: "💸📊", choices: [
+      { text: "I draw it up.", correct: true, feedback: "Budget ready—finance approved! 😎" },
+      { text: "I draw it out.", correct: false, feedback: "You sketch it slowly—deadline missed! 😅" },
+      { text: "I draw it off.", correct: false, feedback: "You doodle instead of budgeting! 😆" },
+      { text: "I draw it in.", correct: false, feedback: "You hide the budget in a file—lost! 😴" }
+    ]},
+    { topic: "work", text: "A project is behind schedule. What do you do? ⏰", emojis: "⏰💼", choices: [
+      { text: "I catch up.", correct: true, feedback: "Deadlines met—team celebrates! 🚀" },
+      { text: "I catch out.", correct: false, feedback: "You expose a coworker's mistake—drama! 😣" },
+      { text: "I catch in.", correct: false, feedback: "You get tangled in red tape meetings! 😩" },
+      { text: "I catch off.", correct: false, feedback: "You doze off during overtime! 😴" }
+    ]},
+    { topic: "work", text: "You need to resolve a conflict at work. What do you do? 🤝", emojis: "🤝💼", choices: [
+      { text: "I smooth it over.", correct: true, feedback: "Harmony restored—team united! 😊" },
+      { text: "I smooth it out.", correct: false, feedback: "You flatten the issue literally—awkward! 😅" },
+      { text: "I smooth it off.", correct: false, feedback: "You dismiss it—tension grows! 😣" },
+      { text: "I smooth it in.", correct: false, feedback: "You bury the conflict—explodes later! 😆" }
+    ]},
+    { topic: "work", text: "You need to cancel a meeting. What do you do? 📅", emojis: "📅🚫", choices: [
+      { text: "I call it off.", correct: true, feedback: "Meeting canceled—time freed! 😎" },
+      { text: "I call it up.", correct: false, feedback: "You schedule more meetings—overbooked! 😣" },
+      { text: "I call it out.", correct: false, feedback: "You publicly criticize it—drama! 😅" },
+      { text: "I call it in.", correct: false, feedback: "You move it indoors—same problem! 😆" }
+    ]},
+    { topic: "work", text: "You need to prepare for a client pitch. What do you do? 🎤", emojis: "🎤💼", choices: [
+      { text: "I brush up.", correct: true, feedback: "Skills polished—pitch perfect! ✨" },
+      { text: "I brush out.", correct: false, feedback: "You sweep the room instead—wrong prep! 😅" },
+      { text: "I brush off.", correct: false, feedback: "You ignore the pitch—client lost! 😣" },
+      { text: "I brush in.", correct: false, feedback: "You paint the slides—artsy fail! 😆" }
+    ]},
+    { topic: "work", text: "You need to distribute tasks. What do you do? 📋", emojis: "📋👥", choices: [
+      { text: "I hand them out.", correct: true, feedback: "Tasks assigned—team rolling! ✅" },
+      { text: "I hand them in.", correct: false, feedback: "You submit tasks to yourself—confused! 😅" },
+      { text: "I hand them off.", correct: false, feedback: "You delegate everything—lazy! 😴" },
+      { text: "I hand them up.", correct: false, feedback: "You toss tasks in the air—chaos! 😆" }
+    ]},
+    { topic: "work", text: "You need to improve a process. What do you do? ⚙️", emojis: "⚙️💼", choices: [
+      { text: "I streamline it.", correct: true, feedback: "Process optimized—efficiency king! 😎" },
+      { text: "I streamline out.", correct: false, feedback: "You remove the process entirely—oops! 😣" },
+      { text: "I streamline off.", correct: false, feedback: "You ignore it—inefficiency rules! 😅" },
+      { text: "I streamline in.", correct: false, feedback: "You complicate it with extra steps! 😆" }
+    ]},
+    { topic: "work", text: "You need to prepare for a big meeting. What do you do? 📅", emojis: "📅💼", choices: [
+      { text: "I gear up.", correct: true, feedback: "Ready to impress—meeting nailed! 😎" },
+      { text: "I gear out.", correct: false, feedback: "You dress for hiking—wrong vibe! 🥾" },
+      { text: "I gear off.", correct: false, feedback: "You skip prep—unprepared! 😣" },
+      { text: "I gear in.", correct: false, feedback: "You lock yourself in a closet—missing! 😆" }
+    ]},
+    { topic: "work", text: "You need to share a document with your team. What do you do? 📄", emojis: "📄👥", choices: [
+      { text: "I send it out.", correct: true, feedback: "Team has the doc—collaboration on! ✅" },
+      { text: "I send it up.", correct: false, feedback: "You email it to the CEO—oops! 😅" },
+      { text: "I send it off.", correct: false, feedback: "You delete it instead—gone! 😱" },
+      { text: "I send it in.", correct: false, feedback: "You hide it in your inbox—useless! 😆" }
+    ]},
+    { topic: "work", text: "You need to clean your workspace. What do you do? 🖇️", emojis: "🖇️💼", choices: [
+      { text: "I clear it out.", correct: true, feedback: "Workspace spotless—focus mode! ✨" },
+      { text: "I clear it up.", correct: false, feedback: "You organize it into chaos—messy! 😅" },
+      { text: "I clear it off.", correct: false, feedback: "You sweep papers to the floor! 😣" },
+      { text: "I clear it in.", correct: false, feedback: "You stuff junk in drawers—hidden mess! 😆" }
+    ]},
+    { topic: "work", text: "You need to start a new project. What do you do? 🚀", emojis: "🚀💼", choices: [
+      { text: "I kick it off.", correct: true, feedback: "Project launched—team excited! 🥳" },
+      { text: "I kick it up.", correct: false, feedback: "You escalate it too fast—overwhelmed! 😅" },
+      { text: "I kick it out.", correct: false, feedback: "You cancel it before starting! 😣" },
+      { text: "I kick it in.", correct: false, feedback: "You hide the project—forgotten! 😆" }
+    ]},
+    { topic: "work", text: "You need to check a colleague’s work. What do you do? 📝", emojis: "📝💼", choices: [
+      { text: "I go over it.", correct: true, feedback: "Work reviewed—great feedback! ✅" },
+      { text: "I go out it.", correct: false, feedback: "You leave to avoid it—slacker! 😅" },
+      { text: "I go off it.", correct: false, feedback: "You rant about it—drama! 😣" },
+      { text: "I go in it.", correct: false, feedback: "You dive into their files—privacy breach! 😆" }
+    ]},
+    { topic: "work", text: "You want to improve your skills. What do you do? 🧠", emojis: "🧠💼", choices: [
+      { text: "I brush up.", correct: true, feedback: "Skills sharpened—career boost! ✨" },
+      { text: "I brush out.", correct: false, feedback: "You sweep the office instead—wrong task! 😅" },
+      { text: "I brush off.", correct: false, feedback: "You ignore learning—stagnant! 😣" },
+      { text: "I brush in.", correct: false, feedback: "You paint your skills—artsy fail! 😆" }
+    ]},
+    // Social (26 scenarios)
+    { topic: "social", text: "Your friend is telling a boring story. What do you do? 😴", emojis: "😴🎉", choices: [
+      { text: "I tune it out.", correct: true, feedback: "You politely nod and daydream—story over soon! 😌" },
+      { text: "I tune it in.", correct: false, feedback: "You focus too hard and get even more bored! 😩" },
+      { text: "I tune it up.", correct: false, feedback: "You adjust the 'volume' and turn it into a sing-along! 🕺" },
+      { text: "I tune it off.", correct: false, feedback: "You pretend to mute your friend—super awkward! 😬" }
+    ]},
+    { topic: "social", text: "You’re invited to a party. What do you do? 🎉", emojis: "🎉🎈", choices: [
+      { text: "I show up.", correct: true, feedback: "You arrive, party’s better with you! 🥳" },
+      { text: "I show out.", correct: false, feedback: "You leave early to avoid dancing! 😅" },
+      { text: "I show off.", correct: false, feedback: "You flex your dance moves—too much! 💃" },
+      { text: "I show in.", correct: false, feedback: "You hide in the kitchen all night! 😴" }
+    ]},
+    { topic: "social", text: "Your friend is upset. What do you do? 😢", emojis: "😢🤗", choices: [
+      { text: "I cheer them up.", correct: true, feedback: "Friend’s smiling again—nice one! 😊" },
+      { text: "I cheer them out.", correct: false, feedback: "You send them away—still sad! 😣" },
+      { text: "I cheer them off.", correct: false, feedback: "You shoo them like a fly—rude! 😬" },
+      { text: "I cheer them in.", correct: false, feedback: "You invite more sadness in—oops! 😅" }
+    ]},
+    { topic: "social", text: "You want to join a conversation. What do you do? 💬", emojis: "💬👥", choices: [
+      { text: "I jump in.", correct: true, feedback: "You’re part of the chat—great input! 😎" },
+      { text: "I jump out.", correct: false, feedback: "You leap away from the group—missed out! 😴" },
+      { text: "I jump up.", correct: false, feedback: "You literally jump, startling everyone! 😆" },
+      { text: "I jump off.", correct: false, feedback: "You ditch the convo for no reason! 😅" }
+    ]},
+    { topic: "social", text: "You’re planning a group outing. What do you do? 🌄", emojis: "🌄👥", choices: [
+      { text: "I plan it out.", correct: true, feedback: "Trip planned—everyone’s excited! 🥳" },
+      { text: "I plan it up.", correct: false, feedback: "You escalate to a world tour—too much! 🌍" },
+      { text: "I plan it off.", correct: false, feedback: "You cancel the outing—boo! 😣" },
+      { text: "I plan it in.", correct: false, feedback: "You plan a stay-home party—lame! 😴" }
+    ]},
+    { topic: "social", text: "You need to decline an invitation. What do you do? 📩", emojis: "📩🚫", choices: [
+      { text: "I turn it down.", correct: true, feedback: "Polite decline—well handled! 😊" },
+      { text: "I turn it up.", correct: false, feedback: "You make it a bigger event—overcommitted! 😅" },
+      { text: "I turn it off.", correct: false, feedback: "You ghost the invite—awkward! 😬" },
+      { text: "I turn it in.", correct: false, feedback: "You submit it as homework—wrong move! 😆" }
+    ]},
+    { topic: "social", text: "You want to make a good impression at a party. What do you do? 😎", emojis: "😎🎉", choices: [
+      { text: "I dress up.", correct: true, feedback: "Looking sharp—everyone’s impressed! ✨" },
+      { text: "I dress out.", correct: false, feedback: "You wear hiking gear to the party! 😅" },
+      { text: "I dress off.", correct: false, feedback: "You show up in pajamas—too casual! 😴" },
+      { text: "I dress in.", correct: false, feedback: "You hide in baggy clothes—no spotlight! 😆" }
+    ]},
+    { topic: "social", text: "You want to join a group chat. What do you do? 💬", emojis: "💬🎉", choices: [
+      { text: "I chime in.", correct: true, feedback: "Your comment fits right in—group loves it! 😄" },
+      { text: "I chime out.", correct: false, feedback: "You mute yourself—chat ignores you! 😔" },
+      { text: "I chime up.", correct: false, feedback: "You start ringing bells in the chat! 🎤" },
+      { text: "I chime off.", correct: false, feedback: "You log off before saying anything! 🚪" }
+    ]},
+    { topic: "social", text: "You want to leave a boring event. What do you do? 😴", emojis: "😴🎈", choices: [
+      { text: "I sneak out.", correct: true, feedback: "Smooth exit—no one notices! 😎" },
+      { text: "I sneak up.", correct: false, feedback: "You tiptoe loudly—everyone stares! 😅" },
+      { text: "I sneak in.", correct: false, feedback: "You go back for more boredom! 😴" },
+      { text: "I sneak off.", correct: false, feedback: "You trip and make a scene—oops! 😆" }
+    ]},
+    { topic: "social", text: "You want to impress at a dinner party. What do you do? 🍽️", emojis: "🍽️🎉", choices: [
+      { text: "I show off.", correct: true, feedback: "Your charm wins the table—star of the night! ✨" },
+      { text: "I show up.", correct: false, feedback: "You just arrive—no one’s impressed yet! 😅" },
+      { text: "I show out.", correct: false, feedback: "You leave early—missed the fun! 😣" },
+      { text: "I show in.", correct: false, feedback: "You hide in the kitchen—shy chef? 😆" }
+    ]},
+    { topic: "social", text: "You need to organize a friend’s birthday. What do you do? 🎂", emojis: "🎂🎉", choices: [
+      { text: "I set it up.", correct: true, feedback: "Party planned—birthday success! 🥳" },
+      { text: "I set it off.", correct: false, feedback: "You start a fire with candles—chaos! 🔥" },
+      { text: "I set it out.", correct: false, feedback: "You plan it in a field—rained out! 🌧️" },
+      { text: "I set it in.", correct: false, feedback: "You lock the party indoors—cramped! 😅" }
+    ]},
+    { topic: "social", text: "You want to help a friend with a task. What do you do? 🤝", emojis: "🤝🎉", choices: [
+      { text: "I pitch in.", correct: true, feedback: "Teamwork makes the dream work! 😊" },
+      { text: "I pitch out.", correct: false, feedback: "You throw the task away—oops! 😅" },
+      { text: "I pitch up.", correct: false, feedback: "You raise the stakes too high! 😣" },
+      { text: "I pitch off.", correct: false, feedback: "You dodge helping entirely! 😴" }
+    ]},
+    { topic: "social", text: "You’re arguing with a friend. What do you do? 😣", emojis: "😣👥", choices: [
+      { text: "I make up.", correct: true, feedback: "Friendship restored—hugs all around! 🤗" },
+      { text: "I make out.", correct: false, feedback: "You kiss and confuse everyone! 😳" },
+      { text: "I make off.", correct: false, feedback: "You run away from the argument! 😅" },
+      { text: "I make in.", correct: false, feedback: "You drag the fight indoors—tense! 😆" }
+    ]},
+    { topic: "social", text: "You want to share a cool idea. What do you do? 💡", emojis: "💡🎉", choices: [
+      { text: "I bring it up.", correct: true, feedback: "Idea shared—everyone loves it! 😎" },
+      { text: "I bring it out.", correct: false, feedback: "You present it outside in the rain—soggy! 🌧️" },
+      { text: "I bring it off.", correct: false, feedback: "You abandon the idea—lost chance! 😣" },
+      { text: "I bring it in.", correct: false, feedback: "You hide it in a box—no one sees! 😅" }
+    ]},
+    { topic: "social", text: "You need to end a conversation politely. What do you do? 😊", emojis: "😊🎉", choices: [
+      { text: "I bow out.", correct: true, feedback: "Graceful goodbye—they understand! 😎" },
+      { text: "I bow in.", correct: false, feedback: "You keep bowing awkwardly like a robot! 😅" },
+      { text: "I bow up.", correct: false, feedback: "You puff up and challenge them to a duel! 💪" },
+      { text: "I bow off.", correct: false, feedback: "You trip and bow out the door—literally! 😬" }
+    ]},
+    { topic: "social", text: "You want to reconnect with an old friend. What do you do? 📞", emojis: "📞👥", choices: [
+      { text: "I catch up.", correct: true, feedback: "Great chat—friendship revived! 😊" },
+      { text: "I catch out.", correct: false, feedback: "You expose their old secrets—awkward! 😅" },
+      { text: "I catch off.", correct: false, feedback: "You hang up early—missed chance! 😣" },
+      { text: "I catch in.", correct: false, feedback: "You trap them in a long call—tiring! 😆" }
+    ]},
+    { topic: "social", text: "You want to avoid a boring topic. What do you do? 😴", emojis: "😴💬", choices: [
+      { text: "I steer away.", correct: true, feedback: "Topic changed—conversation saved! 😎" },
+      { text: "I steer up.", correct: false, feedback: "You escalate the boring talk—yawn! 😅" },
+      { text: "I steer off.", correct: false, feedback: "You derail the chat completely! 😣" },
+      { text: "I steer in.", correct: false, feedback: "You dive deeper into boredom! 😴" }
+    ]},
+    { topic: "social", text: "You need to apologize to a friend. What do you do? 😔", emojis: "😔🤝", choices: [
+      { text: "I make it up.", correct: true, feedback: "Apology accepted—friendship back! 😊" },
+      { text: "I make it out.", correct: false, feedback: "You kiss and confuse them! 😳" },
+      { text: "I make it off.", correct: false, feedback: "You run from the apology—awkward! 😅" },
+      { text: "I make it in.", correct: false, feedback: "You hide your apology—unseen! 😆" }
+    ]},
+    { topic: "social", text: "You want to share gossip. What do you do? 🗣️", emojis: "🗣️🎉", choices: [
+      { text: "I pass it on.", correct: true, feedback: "Gossip shared—party buzzes! 🥳" },
+      { text: "I pass it out.", correct: false, feedback: "You faint from gossip overload! 😅" },
+      { text: "I pass it off.", correct: false, feedback: "You dismiss it—boring party! 😣" },
+      { text: "I pass it in.", correct: false, feedback: "You whisper it to yourself—pointless! 😆" }
+    ]},
+    { topic: "social", text: "You want to calm an angry friend. What do you do? 😣", emojis: "😣🤗", choices: [
+      { text: "I talk them down.", correct: true, feedback: "Friend’s calm—crisis averted! 😊" },
+      { text: "I talk them up.", correct: false, feedback: "You hype them up—more anger! 😅" },
+      { text: "I talk them out.", correct: false, feedback: "You convince them to leave—oops! 😣" },
+      { text: "I talk them in.", correct: false, feedback: "You trap them in a lecture—worse! 😆" }
+    ]},
+    { topic: "social", text: "You want to start a conversation at a party. What do you do? 🎉", emojis: "🎉💬", choices: [
+      { text: "I strike it up.", correct: true, feedback: "Chat’s flowing—party star! 😎" },
+      { text: "I strike it out.", correct: false, feedback: "You swing and miss—awkward silence! 😅" },
+      { text: "I strike it off.", correct: false, feedback: "You avoid talking—lonely corner! 😣" },
+      { text: "I strike it in.", correct: false, feedback: "You whisper to yourself—no one hears! 😆" }
+    ]},
+    { topic: "social", text: "You need to calm a loud argument. What do you do? 😣", emojis: "😣👥", choices: [
+      { text: "I settle it down.", correct: true, feedback: "Peace restored—hero moment! 😊" },
+      { text: "I settle it up.", correct: false, feedback: "You make it louder—chaos! 😅" },
+      { text: "I settle it out.", correct: false, feedback: "You move the fight outside—still loud! 😣" },
+      { text: "I settle it in.", correct: false, feedback: "You trap everyone in silence—tense! 😆" }
+    ]};
 
     let currentScenarioIndex = 0;
     let score = 0;
