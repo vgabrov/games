@@ -60,12 +60,12 @@
   <!-- Game Container -->
   <div id="game-container" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md hidden">
     <h1 class="text-2xl font-bold text-center mb-4">SiDetRiktig</h1>
-    <p id="score" class="text-center mb-4">Score: <span id="score-value">0</span> (Min: -10)</p>
+    <p id="score" class="text-center mb-4">Poeng - Счёт: <span id="score-value">0</span> (Min: -10)</p>
     <div class="mb-2">
       <div class="w-full bg-gray-200 rounded-full h-2.5">
         <div id="progress" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
       </div>
-      <p id="progress-text" class="text-center text-sm text-gray-600">Question 1/50</p>
+      <p id="progress-text" class="text-center text-sm text-gray-600">Spørsmål - Вопрос 1/50</p>
     </div>
     <div id="sprite" class="text-center mb-4">🧑‍🎓</div>
     <div id="scenario-emojis" class="text-center mb-2 text-3xl"></div>
@@ -674,7 +674,7 @@
 
     if (timerEnabled) {
       currentTime = timeLimit;
-      document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
+      document.getElementById('timer-display').textContent = `Tid: ${currentTime}s`;
       document.getElementById('timer-display').classList.remove('hidden');
       startTimer();
     }
@@ -716,13 +716,13 @@
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       currentTime--;
-      document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
+      document.getElementById('timer-display').textContent = `Tid: ${currentTime}s`;
       if (currentTime <= 0) {
         clearInterval(timerInterval);
         score -= 2;
         if (score < -10) score = -10;
         document.getElementById('score-value').textContent = score;
-        document.getElementById('feedback').textContent = 'Time’s up! -2 points 😓';
+        document.getElementById('feedback').textContent = 'Tiden er ute! -2 poeng 😓';
         document.getElementById('feedback').classList.remove('hidden');
         document.getElementById('next-button').classList.remove('hidden');
         sprite.textContent = '😓';
