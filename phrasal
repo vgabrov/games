@@ -1,0 +1,457 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phrasal Verb Fiasco</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes flash-green {
+      0% { background-color: #10b981; }
+      100% { background-color: transparent; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .flash-green { animation: flash-green 0.5s ease-in-out; }
+    .shake { animation: shake 0.5s ease-in-out; }
+    #sprite { font-size: 2rem; transition: all 0.3s; }
+    @media (max-width: 640px) {
+      #game-container, #menu-container, #game-over { max-width: 90%; }
+      button { font-size: 1rem; padding: 0.5rem; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+  <!-- Pre-game Menu -->
+  <div id="menu-container" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center mb-4">Phrasal Verb Fiasco - Setup</h1>
+    
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-2">Difficulty Level:</label>
+      <select id="difficulty" class="w-full p-2 border rounded">
+        <option value="easy">Easy (+8/-3 points)</option>
+        <option value="medium" selected>Medium (+10/-5 points)</option>
+        <option value="hard">Hard (+12/-7 points)</option>
+      </select>
+    </div>
+    
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-2">Topic:</label>
+      <select id="topic" class="w-full p-2 border rounded">
+        <option value="general">General (All Scenarios)</option>
+        <option value="work">Work</option>
+        <option value="social">Social Situations</option>
+        <option value="travel">Travel & Tourism (Cafes, Banks, etc.)</option>
+      </select>
+    </div>
+    
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-2">Number of Questions (1-50):</label>
+      <input type="number" id="num-questions" min="1" max="50" value="50" class="w-full p-2 border rounded">
+    </div>
+    
+    <div class="mb-4 flex items-center">
+      <input type="checkbox" id="timer-toggle" class="mr-2">
+      <label for="timer-toggle" class="text-sm font-medium">Enable Timer</label>
+    </div>
+    
+    <div id="timer-input" class="mb-4 hidden">
+      <label class="block text-sm font-medium mb-2">Time Limit per Question (5-60 seconds):</label>
+      <input type="number" id="time-limit" min="5" max="60" value="15" class="w-full p-2 border rounded">
+    </div>
+    
+    <button id="start-button" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Start Game</button>
+  </div>
+
+  <!-- Game Container -->
+  <div id="game-container" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md hidden">
+    <h1 class="text-2xl font-bold text-center mb-4">Phrasal Verb Fiasco</h1>
+    <p id="score" class="text-center mb-4">Score: <span id="score-value">0</span> (Min: -10)</p>
+    <div class="mb-2">
+      <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div id="progress" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <p id="progress-text" class="text-center text-sm text-gray-600">Question 1/50</p>
+    </div>
+    <div id="sprite" class="text-center mb-4">🧑‍🎓</div>
+    <div id="scenario-emojis" class="text-center mb-2 text-3xl"></div>
+    <p id="scenario" class="mb-4 text-gray-700"></p>
+    <div id="choices" class="space-y-2"></div>
+    <div id="timer-display" class="text-center text-xl font-bold hidden mb-2"></div>
+    <p id="feedback" class="mt-4 text-gray-700 hidden"></p>
+    <button id="next-button" class="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 hidden">Next Scenario</button>
+  </div>
+
+  <!-- Game Over -->
+  <div id="game-over" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md hidden mt-4">
+    <p id="game-over-message" class="text-center"></p>
+    <button id="restart-button" class="mt-2 w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Restart Game</button>
+  </div>
+
+  <!-- Audio Placeholders (replace src with your .mp3/.wav files) -->
+  <audio id="correct-sound" preload="auto">
+    <source src="correct.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="wrong-sound" preload="auto">
+    <source src="wrong.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    // Updated and expanded scenarios with corrections
+    const scenarios = {
+      easy: [
+        { topic: "general", text: "You need to start your car. What do you do? 🚗", emojis: "🚗🔑", choices: [
+          { text: "I turn it on.", correct: true, feedback: "Nice! The car roars to life. 😎" },
+          { text: "I turn it off.", correct: false, feedback: "It's already off, silly! You sit in silence. 😅" },
+          { text: "I turn it up.", correct: false, feedback: "You blast the radio instead of starting the engine! 🎶" },
+          { text: "I turn it down.", correct: false, feedback: "You dim the headlights... still not moving! 😴" }
+        ]},
+        { topic: "general", text: "Your room is a mess. What do you do? 🧹", emojis: "🧹🏠", choices: [
+          { text: "I clean it up.", correct: true, feedback: "Spotless room, well done! ✨" },
+          { text: "I clean it out.", correct: false, feedback: "You throw everything away, including your phone! 😱" },
+          { text: "I clean it off.", correct: false, feedback: "You wipe the walls... but the floor's still dirty! 😆" },
+          { text: "I clean it down.", correct: false, feedback: "You flood the room with water—now it's a swamp! 🌊" }
+        ]},
+        { topic: "work", text: "Your boss needs a report quickly. What do you do? 📊", emojis: "📊💼", choices: [
+          { text: "I whip it up.", correct: true, feedback: "Report done fast, boss impressed! 😊" },
+          { text: "I whip it out.", correct: false, feedback: "You dramatically pull out a whip in the meeting—chaos! 💃" },
+          { text: "I whip it off.", correct: false, feedback: "You take off your jacket instead of writing! 😆" },
+          { text: "I whip it down.", correct: false, feedback: "You scribble nonsense and spill coffee on it! 📝😵" }
+        ]},
+        { topic: "social", text: "Your friend is telling a boring story. What do you do? 😴", emojis: "😴🎉", choices: [
+          { text: "I tune it out.", correct: true, feedback: "You politely nod and daydream—story over soon! 😌" },
+          { text: "I tune it in.", correct: false, feedback: "You focus too hard and get even more bored! 😩" },
+          { text: "I tune it up.", correct: false, feedback: "You adjust the 'volume' and turn it into a sing-along! 🕺" },
+          { text: "I tune it off.", correct: false, feedback: "You pretend to mute your friend—super awkward! 😬" }
+        ]},
+        { topic: "travel", text: "You need to ask for directions at a cafe. What do you do? ☕", emojis: "☕🗺️", choices: [
+          { text: "I ask around.", correct: true, feedback: "Locals at the cafe help you find your way! 🧭" },
+          { text: "I ask out.", correct: false, feedback: "You invite the barista on a date instead of asking directions! 😳" },
+          { text: "I ask up.", correct: false, feedback: "You shout your question to everyone—too loud! 😅" },
+          { text: "I ask off.", correct: false, feedback: "You cancel asking and wander blindly! 🚫" }
+        ]},
+        { topic: "travel", text: "You arrive at a tourist hotel. What do you do first? 🏨", emojis: "🏨🛎️", choices: [
+          { text: "I check in.", correct: true, feedback: "Room key in hand—welcome to paradise! 😊" },
+          { text: "I check out.", correct: false, feedback: "You leave right away without a room! 😵" },
+          { text: "I check up.", correct: false, feedback: "You inspect the lobby ceiling for cobwebs! 😆" },
+          { text: "I check off.", correct: false, feedback: "You mark 'hotel' off your list and skip staying! 🚫" }
+        ]}
+      ],
+      medium: [
+        { topic: "general", text: "Your phone battery is low. What do you do? 📱", emojis: "📱🔋", choices: [
+          { text: "I plug it in.", correct: true, feedback: "Charging nicely—full power soon! ⚡️" },
+          { text: "I plug it up.", correct: false, feedback: "You block the port with lint—dead battery! 😖" },
+          { text: "I plug it out.", correct: false, feedback: "You unplug a stranger's charger—fight ensues! 😬" },
+          { text: "I plug it off.", correct: false, feedback: "You turn off the phone to 'save' it... oops! 😴" }
+        ]},
+        { topic: "general", text: "You need to leave a party early. What do you do? 🎈", emojis: "🎈🚪", choices: [
+          { text: "I slip out.", correct: true, feedback: "You leave unnoticed—smooth exit! 😎" },
+          { text: "I slip up.", correct: false, feedback: "You trip over a balloon and spill drinks! 😅" },
+          { text: "I slip in.", correct: false, feedback: "You sneak back in for more cake by mistake! 🥳" },
+          { text: "I slip off.", correct: false, feedback: "You doze off on the couch—invisible no more! 😴" }
+        ]},
+        { topic: "work", text: "A meeting is getting heated. What do you do? 🔥", emojis: "🔥💼", choices: [
+          { text: "I calm it down.", correct: true, feedback: "Everyone chills—meeting saved! 😊" },
+          { text: "I calm it up.", correct: false, feedback: "You make tempers rise even higher! 😣" },
+          { text: "I calm it out.", correct: false, feedback: "You herd everyone outside like cats! 🌳" },
+          { text: "I calm it off.", correct: false, feedback: "You abruptly end the meeting—unresolved! 😮" }
+        ]},
+        { topic: "social", text: "You want to join a group chat. What do you do? 💬", emojis: "💬🎉", choices: [
+          { text: "I chime in.", correct: true, feedback: "Your comment fits right in—group loves it! 😄" },
+          { text: "I chime out.", correct: false, feedback: "You mute yourself—chat ignores you! 😔" },
+          { text: "I chime up.", correct: false, feedback: "You start ringing bells in the chat! 🎤" },
+          { text: "I chime off.", correct: false, feedback: "You log off before saying anything! 🚪" }
+        ]},
+        { topic: "travel", text: "You need to exchange money at a bank. What do you do? 💸", emojis: "💸🏦", choices: [
+          { text: "I cash it in.", correct: true, feedback: "Local currency in hand—ready to spend! 💰" },
+          { text: "I cash it out.", correct: false, feedback: "You withdraw everything and cause a bank run! 💥🏦" },
+          { text: "I cash it up.", correct: false, feedback: "You try to 'cash up' like adding bills—confusion! 😵" },
+          { text: "I cash it off.", correct: false, feedback: "You dismiss the teller and leave empty-handed! 😱" }
+        ]},
+        { topic: "travel", text: "You're lost in a new city. What do you do? 🗺️", emojis: "🗺️🌆", choices: [
+          { text: "I figure it out.", correct: true, feedback: "Map in mind—you find your way! 🧭" },
+          { text: "I figure it up.", correct: false, feedback: "You climb a lamppost to 'figure up' the view! 🌳" },
+          { text: "I figure it off.", correct: false, feedback: "You give up and nap on a bench! 😴" },
+          { text: "I figure on it.", correct: false, feedback: "You expect the city to guide itself to you... still lost! 😴🗺️" }
+        ]},
+        { topic: "travel", text: "You want coffee at a busy cafe abroad. What do you do? ☕", emojis: "☕🏪", choices: [
+          { text: "I line up.", correct: true, feedback: "Your turn—espresso incoming! 😋" },
+          { text: "I line out.", correct: false, feedback: "You draw a line on the floor and confuse everyone! 📏" },
+          { text: "I line in.", correct: false, feedback: "You squeeze into the wrong queue! 😅" },
+          { text: "I line off.", correct: false, feedback: "You mark the menu off and skip ordering! 🚫" }
+        ]}
+      ],
+      hard: [
+        { topic: "general", text: "You're running out of groceries. What do you do? 🛒", emojis: "🛒🍎", choices: [
+          { text: "I stock up.", correct: true, feedback: "Pantry overflowing—prepared for weeks! 🥳" },
+          { text: "I stock out.", correct: false, feedback: "You sell your empty fridge at a yard sale! 😅" },
+          { text: "I stock in.", correct: false, feedback: "You lock the few items away from yourself! 🔒" },
+          { text: "I stock off.", correct: false, feedback: "You ignore it and order pizza forever! 😴🍕" }
+        ]},
+        { topic: "general", text: "Your team needs motivation. What do you do? 🚀", emojis: "🚀👥", choices: [
+          { text: "I fire them up.", correct: true, feedback: "Team's energized and productive! 💪" },
+          { text: "I fire them out.", correct: false, feedback: "You send the whole team home early! 😮" },
+          { text: "I fire them off.", correct: false, feedback: "You launch emails like fireworks—spam alert! 🎆" },
+          { text: "I fire them in.", correct: false, feedback: "You trap them in a tiny room for 'focus'! 🔒" }
+        ]},
+        { topic: "work", text: "A project is behind schedule. What do you do? ⏰", emojis: "⏰💼", choices: [
+          { text: "I catch up.", correct: true, feedback: "Deadlines met—team celebrates! 🚀" },
+          { text: "I catch out.", correct: false, feedback: "You expose a coworker's mistake—drama! 😣" },
+          { text: "I catch in.", correct: false, feedback: "You get tangled in red tape meetings! 😩" },
+          { text: "I catch off.", correct: false, feedback: "You doze off during overtime! 😴" }
+        ]},
+        { topic: "social", text: "You need to end a conversation politely. What do you do? 😊", emojis: "😊🎉", choices: [
+          { text: "I bow out.", correct: true, feedback: "Graceful goodbye—they understand! 😎" },
+          { text: "I bow in.", correct: false, feedback: "You keep bowing awkwardly like a robot! 😅" },
+          { text: "I bow up.", correct: false, feedback: "You puff up and challenge them to a duel! 💪" },
+          { text: "I bow off.", correct: false, feedback: "You trip and bow out the door—literally! 😬" }
+        ]},
+        { topic: "travel", text: "You need a room at a busy airport hotel. What do you do? 🏨✈️", emojis: "🏨✈️", choices: [
+          { text: "I check in.", correct: true, feedback: "Suite upgraded—restful layover! 😊" },
+          { text: "I check out.", correct: false, feedback: "You bail before registering—sleep on the floor! 😵" },
+          { text: "I check up.", correct: false, feedback: "You verify the flight schedule instead! 😆" },
+          { text: "I check off.", correct: false, feedback: "You tick 'hotel' on your list and keep flying! 🚫" }
+        ]},
+        { topic: "travel", text: "You need to cancel a tour booking. What do you do? 📅", emojis: "📅🚶", choices: [
+          { text: "I call it off.", correct: true, feedback: "Refunded and free—better plans ahead! 😊" },
+          { text: "I call it up.", correct: false, feedback: "You book an extra tour by accident! 😅" },
+          { text: "I call it out.", correct: false, feedback: "You yell at the booking agent—banned! 😣" },
+          { text: "I call it in.", correct: false, feedback: "You fake sick to skip it—guilt trip! 😳" }
+        ]},
+        { topic: "travel", text: "You want to withdraw cash at a foreign ATM. What do you do? 🏧", emojis: "🏧💳", choices: [
+          { text: "I take it out.", correct: true, feedback: "Bills dispensed—safe travels! 💵" },
+          { text: "I take it up.", correct: false, feedback: "You argue fees with the machine! 😤" },
+          { text: "I take it in.", correct: false, feedback: "You absorb the exchange rate mentally—confused! 🤯" },
+          { text: "I take it off.", correct: false, feedback: "You remove the card and leave empty-handed! 😩" }
+        ]}
+      ]
+    };
+
+    let currentScenarioIndex = 0;
+    let score = 0;
+    let selectedScenarios = [];
+    let totalQuestions = 50;
+    let timerEnabled = false;
+    let timeLimit = 15;
+    let timerInterval = null;
+    let currentTime = 0;
+    let difficulty = 'medium';
+    let topic = 'general';
+
+    const correctSound = document.getElementById('correct-sound');
+    const wrongSound = document.getElementById('wrong-sound');
+    const sprite = document.getElementById('sprite');
+
+    // Toggle timer input visibility
+    document.getElementById('timer-toggle').addEventListener('change', function() {
+      document.getElementById('timer-input').classList.toggle('hidden', !this.checked);
+    });
+
+    // Start game
+    document.getElementById('start-button').addEventListener('click', () => {
+      difficulty = document.getElementById('difficulty').value;
+      topic = document.getElementById('topic').value;
+      totalQuestions = Math.min(Math.max(parseInt(document.getElementById('num-questions').value) || 50, 1), 50);
+      timerEnabled = document.getElementById('timer-toggle').checked;
+      timeLimit = timerEnabled ? Math.min(Math.max(parseInt(document.getElementById('time-limit').value) || 15, 5), 60) : 15;
+
+      // Filter scenarios based on topic and difficulty
+      let availableScenarios = scenarios[difficulty];
+      if (topic !== 'general') {
+        availableScenarios = availableScenarios.filter(s => s.topic === topic);
+      }
+      if (availableScenarios.length === 0) {
+        alert('No scenarios available for this topic and difficulty. Try another combination.');
+        return;
+      }
+      // Repeat scenarios if not enough to meet totalQuestions
+      while (availableScenarios.length < totalQuestions) {
+        availableScenarios = availableScenarios.concat(availableScenarios);
+      }
+      selectedScenarios = shuffle(availableScenarios).slice(0, totalQuestions);
+
+      currentScenarioIndex = 0;
+      score = 0;
+      document.getElementById('score-value').textContent = score;
+      document.getElementById('menu-container').classList.add('hidden');
+      document.getElementById('game-container').classList.remove('hidden');
+      loadScenario();
+    });
+
+    // Shuffle array
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Load scenario
+    function loadScenario() {
+      // Only end game if all questions are answered
+      if (currentScenarioIndex >= selectedScenarios.length) {
+        endGame();
+        return;
+      }
+
+      const scenario = selectedScenarios[currentScenarioIndex];
+      document.getElementById('scenario').textContent = scenario.text;
+      document.getElementById('scenario-emojis').textContent = scenario.emojis;
+      document.getElementById('progress-text').textContent = `Question ${currentScenarioIndex + 1}/${selectedScenarios.length}`;
+      document.getElementById('progress').style.width = `${((currentScenarioIndex + 1) / selectedScenarios.length) * 100}%`;
+
+      const choicesDiv = document.getElementById('choices');
+      choicesDiv.innerHTML = '';
+      shuffle(scenario.choices).forEach(choice => {
+        const button = document.createElement('button');
+        button.className = 'w-full bg-gray-200 py-2 rounded hover:bg-gray-300';
+        button.textContent = choice.text;
+        button.addEventListener('click', () => handleChoice(choice));
+        choicesDiv.appendChild(button);
+      });
+
+      document.getElementById('feedback').classList.add('hidden');
+      document.getElementById('next-button').classList.add('hidden');
+      sprite.textContent = '🧑‍🎓';
+
+      if (timerEnabled) {
+        currentTime = timeLimit;
+        document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
+        document.getElementById('timer-display').classList.remove('hidden');
+        startTimer();
+      }
+    }
+
+    // Handle choice
+    function handleChoice(choice) {
+      clearInterval(timerInterval);
+      document.getElementById('timer-display').classList.add('hidden');
+      const feedback = document.getElementById('feedback');
+      feedback.textContent = choice.feedback;
+      feedback.classList.remove('hidden');
+
+      const points = {
+        easy: { correct: 8, wrong: -3 },
+        medium: { correct: 10, wrong: -5 },
+        hard: { correct: 12, wrong: -7 }
+      };
+
+      if (choice.correct) {
+        score += points[difficulty].correct;
+        document.body.classList.add('flash-green');
+        sprite.textContent = '😎';
+        correctSound.play().catch(() => {});
+        setTimeout(() => document.body.classList.remove('flash-green'), 500);
+      } else {
+        score += points[difficulty].wrong;
+        document.body.classList.add('shake');
+        sprite.textContent = '😅';
+        wrongSound.play().catch(() => {});
+        setTimeout(() => document.body.classList.remove('shake'), 500);
+      }
+
+      // Clamp score to -10 min
+      if (score < -10) score = -10;
+      document.getElementById('score-value').textContent = score;
+      document.getElementById('next-button').classList.remove('hidden');
+
+      // Only end game if score is -10 or below
+      if (score <= -10) {
+        endGame();
+      }
+    }
+
+    // Start timer
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        currentTime--;
+        document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
+        if (currentTime <= 0) {
+          clearInterval(timerInterval);
+          score -= 2;
+          if (score < -10) score = -10;
+          document.getElementById('score-value').textContent = score;
+          document.getElementById('feedback').textContent = 'Time’s up! -2 points 😓';
+          document.getElementById('feedback').classList.remove('hidden');
+          document.getElementById('next-button').classList.remove('hidden');
+          sprite.textContent = '😓';
+          wrongSound.play().catch(() => {});
+          if (score <= -10) {
+            endGame();
+          }
+        }
+      }, 1000);
+    }
+
+    // Next scenario
+    document.getElementById('next-button').addEventListener('click', () => {
+      currentScenarioIndex++;
+      loadScenario();
+    });
+
+    // End game
+    function endGame() {
+      clearInterval(timerInterval);
+      document.getElementById('game-container').classList.add('hidden');
+      document.getElementById('game-over').classList.remove('hidden');
+      const message = score <= -10
+        ? `Game Over! Score: ${score}. Too many mistakes! 😢 Try again?`
+        : `Game Over! Final Score: ${score}. Great job! 🎉 Play again?`;
+      document.getElementById('game-over-message').textContent = message;
+    }
+
+    // Restart game
+    document.getElementById('restart-button').addEventListener('click', () => {
+      currentScenarioIndex = 0;
+      score = 0;
+      document.getElementById('score-value').textContent = score;
+      document.getElementById('game-over').classList.add('hidden');
+      document.getElementById('menu-container').classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
