@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phrasal Verb Fiasco</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes flash-green {
+      0% { background-color: #10b981; }
+      100% { background-color: transparent; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .flash-green { animation: flash-green 0.5s ease-in-out; }
+    .shake { animation: shake 0.5s ease-in-out; }
+    #sprite { font-size: 2rem; transition: all 0.3s; }
+    @media (max-width: 640px) {
+      #game-container, #menu-container, #game-over { max-width: 90%; }
+      button { font-size: 1rem; padding: 0.5rem; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+  <!-- Pre-game Menu -->
+  <div id="menu-container" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center mb-4">Phrasal Verb Fiasco - Setup</h1>
+    
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-2">Topic:</label>
+      <select id="topic" class="w-full p-2 border rounded">
+        <option value="general">General (All Scenarios)</option>
+        <option value="work">Work</option>
+        <option value="social">Social Situations</option>
+        <option value="travel">Travel & Tourism (Cafes, Banks, etc.)</option>
+      </select>
+    </div>
+    
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-2">Number of Questions (1-50):</label>
+      <input type="number" id="num-questions" min="1" max="50" value="50" class="w-full p-2 border rounded">
+    </div>
+    
+    <div class="mb-4 flex items-center">
+      <input type="checkbox" id="timer-toggle" class="mr-2">
+      <label for="timer-toggle" class="text-sm font-medium">Enable Timer</label>
+    </div>
+    
+    <div id="timer-input" class="mb-4 hidden">
+      <label class="block text-sm font-medium mb-2">Time Limit per Question (5-60 seconds):</label>
+      <input type="number" id="time-limit" min="5" max="60" value="15" class="w-full p-2 border rounded">
+    </div>
+    
+    <button id="start-button" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Start Game</button>
+  </div>
+
+  <!-- Game Container -->
+  <div id="game-container" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md hidden">
+    <h1 class="text-2xl font-bold text-center mb-4">Phrasal Verb Fiasco</h1>
+    <p id="score" class="text-center mb-4">Score: <span id="score-value">0</span> (Min: -10)</p>
+    <div class="mb-2">
+      <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div id="progress" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <p id="progress-text" class="text-center text-sm text-gray-600">Question 1/50</p>
+    </div>
+    <div id="sprite" class="text-center mb-4">🧑‍🎓</div>
+    <div id="scenario-emojis" class="text-center mb-2 text-3xl"></div>
+    <p id="scenario" class="mb-4 text-gray-700"></p>
+    <div id="choices" class="space-y-2"></div>
+    <div id="timer-display" class="text-center text-xl font-bold hidden mb-2"></div>
+    <p id="feedback" class="mt-4 text-gray-700 hidden"></p>
+    <button id="next-button" class="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 hidden">Next Scenario</button>
+  </div>
+
+  <!-- Game Over -->
+  <div id="game-over" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md hidden mt-4">
+    <p id="game-over-message" class="text-center"></p>
+    <button id="restart-button" class="mt-2 w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Restart Game</button>
+  </div>
+
+  <!-- Audio Placeholders -->
+  <audio id="correct-sound" preload="auto">
+    <source src="correct.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="wrong-sound" preload="auto">
+    <source src="wrong.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+  // Paste your scenarios array here
+  const scenarios = [
+
+  const scenarios = [
+  // General (50 вопросов)
+  { topic: "general", text: "Du vil hilse på en ny person. Hva sier du? 👋", emojis: "👋😊", choices: [
+    { text: "Hei!", correct: true, feedback: "Perfekt! En vennlig hilsen på norsk! 😊 // Отлично! Дружелюбное приветствие на норвежском!" },
+    { text: "Hej!", correct: false, feedback: "Oi, det er svensk! Prøv igjen! 😅 // Ой, это шведский! Попробуй снова!" },
+    { text: "Hallo!", correct: false, feedback: "Nærme, men det er tysk! 😆 // Близко, но это немецкий!" },
+    { text: "Hola!", correct: false, feedback: "Spansk fiesta? Ikke her! 😴 // Испанская фиеста? Не тут!" }
+  ]},
+  { topic: "general", text: "Hva sier du for å takke noen? 🙏", emojis: "🙏😊", choices: [
+    { text: "Takk!", correct: true, feedback: "Flott! Du er høflig på norsk! 😎 // Класс! Ты вежлив на норвежском!" },
+    { text: "Tak!", correct: false, feedback: "Nesten, men det mangler en 'k'! 😅 // Почти, но не хватает 'k'!" },
+    { text: "Tanke!", correct: false, feedback: "Tanke? Det betyr 'tanke'! 😆 // Танкэ? Это значит 'мысль'!" },
+    { text: "Tuk!", correct: false, feedback: "Tuk? Er det et nytt språk? 😴 // Тук? Это новый язык?" }
+  ]},
+  { topic: "general", text: "Du vil spørre hva noen heter. Hva sier du? 🤔", emojis: "🤔👤", choices: [
+    { text: "Hva heter du?", correct: true, feedback: "Perfekt! Du er klar til å møte folk! 😊 // Отлично! Готов знакомиться!" },
+    { text: "Hvem er du?", correct: false, feedback: "Oi, det høres litt mistenksomt ut! 😅 // Ой, звучит немного подозрительно!" },
+    { text: "Hva er du?", correct: false, feedback: "Er de et menneske eller en robot? 😆 // Они человек или робот?" },
+    { text: "Hvor heter du?", correct: false, feedback: "Hvor? Det er for steder, ikke navn! 😴 // Где? Это для мест, не для имен!" }
+  ]},
+  { topic: "general", text: "Du vil si at du bor i Oslo. Hva sier du? 🏙️", emojis: "🏙️🏠", choices: [
+    { text: "Jeg bor i Oslo.", correct: true, feedback: "Bra! Du høres ut som en ekte osloborger! 😎 // Круто! Ты как настоящий житель Осло!" },
+    { text: "Jeg lever i Oslo.", correct: false, feedback: "Lever? Det høres litt dramatisk ut! 😅 // Живешь? Звучит слишком драматично!" },
+    { text: "Jeg er i Oslo.", correct: false, feedback: "Du er der, men bor du der? 😆 // Ты там, но живешь ли?" },
+    { text: "Jeg bor på Oslo.", correct: false, feedback: "På Oslo? Det er ikke en øy! 😴 // На Осло? Это не остров!" }
+  ]},
+  { topic: "general", text: "Hva er 'mandag' på norsk? 📅", emojis: "📅1️⃣", choices: [
+    { text: "Mandag", correct: true, feedback: "Riktig! Du kjenner ukedagene! 😊 // Верно! Ты знаешь дни недели!" },
+    { text: "Månedag", correct: false, feedback: "Månedag? Det er en ny dag! 😅 // Мёнэдаг? Новый день придумал?" },
+    { text: "Manday", correct: false, feedback: "Engelsk vri? Ikke i Norge! 😆 // Английский уклон? Не в Норвегии!" },
+    { text: "Mondag", correct: false, feedback: "Nesten, men bokstaven glapp! 😴 // Почти, но буква сбежала!" }
+  ]},
+  { topic: "general", text: "Du vil si at du er sulten. Hva sier du? 🍽️", emojis: "🍽️😩", choices: [
+    { text: "Jeg er sulten.", correct: true, feedback: "Perfekt! Tid for mat! 😎 // Отлично! Пора поесть!" },
+    { text: "Jeg er tørst.", correct: false, feedback: "Tørst? Det er drikke, ikke mat! 😅 // Жаждешь? Это про питье, не еду!" },
+    { text: "Jeg er trøtt.", correct: false, feedback: "Trøtt? Gå og sov, ikke spis! 😆 // Устал? Спи, а не ешь!" },
+    { text: "Jeg er sult.", correct: false, feedback: "Sult? Du er ikke sultenhet selv! 😴 // Голод? Ты не сам голод!" }
+  ]},
+  { topic: "general", text: "Hva betyr 'rød' på norsk? 🎨", emojis: "🎨🔴", choices: [
+    { text: "Rød", correct: true, feedback: "Bra jobbet! Du kjenner fargene! 😊 // Молодец! Знаешь цвета!" },
+    { text: "Rødt", correct: false, feedback: "Nesten, men det er en form, ikke farge! 😅 // Почти, но это форма, не цвет!" },
+    { text: "Rod", correct: false, feedback: "Rod? Det høres ut som en båt! 😆 // Род? Похоже на лодку!" },
+    { text: "Røde", correct: false, feedback: "Flertall? Vi snakker én farge! 😴 // Множественное число? Один цвет!" }
+  ]},
+  { topic: "general", text: "Du vil si at du har en bok. Hva sier du? 📚", emojis: "📚✋", choices: [
+    { text: "Jeg har en bok.", correct: true, feedback: "Flott! Du er klar til å lese! 😎 // Класс! Готов читать!" },
+    { text: "Jeg er en bok.", correct: false, feedback: "Er du en bok? Litt papiraktig! 😅 // Ты книга? Бумажный ты!" },
+    { text: "Jeg har bok.", correct: false, feedback: "Mangler noe! En bok, takk! 😆 // Чего-то не хватает! Одна книга!" },
+    { text: "Jeg har boka.", correct: false, feedback: "Boka? Hvilken bok? 😴 // Книга? Какая книга?" }
+  ]},
+  { topic: "general", text: "Hva sier du for å spørre hvor noe er? 🗺️", emojis: "🗺️❓", choices: [
+    { text: "Hvor er det?", correct: true, feedback: "Perfekt! Du finner alt nå! 😊 // Отлично! Теперь всё найдёшь!" },
+    { text: "Hva er det?", correct: false, feedback: "Hva? Du leter etter noe, ikke spør hva! 😅 // Что? Ты ищешь, а не спрашиваешь!" },
+    { text: "Hvorfor er det?", correct: false, feedback: "Hvorfor? Det er ikke filosofi! 😆 // Почему? Это не философия!" },
+    { text: "Hvem er det?", correct: false, feedback: "Hvem? Vi leter etter ting, ikke folk! 😴 // Кто? Ищем вещи, не людей!" }
+  ]},
+  { topic: "general", text: "Du vil si at du liker å gå tur. Hva sier du? 🚶", emojis: "🚶🌳", choices: [
+    { text: "Jeg liker å gå tur.", correct: true, feedback: "Bra! Frisk luft venter! 😎 // Круто! Свежий воздух ждёт!" },
+    { text: "Jeg liker å gå hjem.", correct: false, feedback: "Hjem? Det er ikke tur, det er sofa! 😅 // Домой? Это не прогулка, это диван!" },
+    { text: "Jeg liker å gå fort.", correct: false, feedback: "Fort? Slapp av, det er en tur! 😆 // Быстро? Расслабься, это прогулка!" },
+    { text: "Jeg liker å gå bort.", correct: false, feedback: "Bort? Hvor skal du? 😴 // Прочь? Куда собрался?" }
+  ]},
+  { topic: "general", text: "Du vil si at du er glad. Hva sier du? 😊", emojis: "😊🎉", choices: [
+    { text: "Jeg er glad.", correct: true, feedback: "Flott! Du sprer glede! 😎 // Класс! Ты разносишь радость!" },
+    { text: "Jeg er sint.", correct: false, feedback: "Sint? Smil, det er bedre! 😅 // Злой? Улыбнись, так лучше!" },
+    { text: "Jeg er trøtt.", correct: false, feedback: "Trøtt? Ta en kaffe! 😆 // Устал? Выпей кофе!" },
+    { text: "Jeg er redd.", correct: false, feedback: "Redd? Ingen troll her! 😴 // Боишься? Тут нет троллей!" }
+  ]},
+  { topic: "general", text: "Hva er 'januar' på norsk? 📅", emojis: "📅❄️", choices: [
+    { text: "Januar", correct: true, feedback: "Riktig! Første måned på plass! 😊 // Верно! Первый месяц готов!" },
+    { text: "Januars", correct: false, feedback: "Januars? Ikke et ord! 😅 // Януарс? Не слово!" },
+    { text: "Januarer", correct: false, feedback: "Flere januarer? Bare én! 😆 // Несколько январей? Только один!" },
+    { text: "Janur", correct: false, feedback: "Janur? Det høres eksotisk ut! 😴 // Янур? Звучит экзотично!" }
+  ]},
+  { topic: "general", text: "Du vil si at du har en hund. Hva sier du? 🐶", emojis: "🐶🏠", choices: [
+    { text: "Jeg har en hund.", correct: true, feedback: "Flott! Bjeff bjeff! 😎 // Класс! Гав-гав!" },
+    { text: "Jeg er en hund.", correct: false, feedback: "Er du en hund? Auu! 😅 // Ты собака? Гав!" },
+    { text: "Jeg har hund.", correct: false, feedback: "Mangler 'en'! Prøv igjen! 😆 // Без 'en'! Попробуй ещё!" },
+    { text: "Jeg har hunden.", correct: false, feedback: "Hunden? Hvilken hund? 😴 // Собака? Какая собака?" }
+  ]},
+  { topic: "general", text: "Hva sier du for å spørre om tid? ⏰", emojis: "⏰❓", choices: [
+    { text: "Hva er klokken?", correct: true, feedback: "Bra! Du holder tiden! 😊 // Класс! Ты следишь за временем!" },
+    { text: "Hvor er klokken?", correct: false, feedback: "Leter du etter klokken? 😅 // Ищешь часы?" },
+    { text: "Hvem er klokken?", correct: false, feedback: "Klokken er ikke en person! 😆 // Часы не человек!" },
+    { text: "Hvorfor er klokken?", correct: false, feedback: "Filosofisk tid? Ikke nå! 😴 // Философское время? Не сейчас!" }
+  ]},
+  { topic: "general", text: "Du vil si at du liker kaffe. Hva sier du? ☕", emojis: "☕😊", choices: [
+    { text: "Jeg liker kaffe.", correct: true, feedback: "Perfekt! Norsk kaffepause! 😎 // Отлично! Норвежская кофейная пауза!" },
+    { text: "Jeg liker te.", correct: false, feedback: "Te? Kaffe er kongen i Norge! 😅 // Чай? Кофе — король в Норвегии!" },
+    { text: "Jeg liker melk.", correct: false, feedback: "Melk? Det er for barn! 😆 // Молоко? Это для детей!" },
+    { text: "Jeg liker vann.", correct: false, feedback: "Vann? For kjedelig! 😴 // Вода? Слишком скучно!" }
+  ]},
+  { topic: "general", text: "Hva betyr 'blå' på norsk? 🎨", emojis: "🎨🔵", choices: [
+    { text: "Blå", correct: true, feedback: "Riktig! Fargen på fjorden! 😊 // Верно! Цвет фьорда!" },
+    { text: "Blått", correct: false, feedback: "Nesten, men det er en form! 😅 // Почти, но это форма!" },
+    { text: "Bla", correct: false, feedback: "Bla? Det er ikke et ord! 😆 // Бла? Это не слово!" },
+    { text: "Blåe", correct: false, feedback: "Flertall? Bare én farge! 😴 // Множественное число? Один цвет!" }
+  ]},
+  { topic: "general", text: "Du vil si at du er trøtt. Hva sier du? 😴", emojis: "😴🛌", choices: [
+    { text: "Jeg er trøtt.", correct: true, feedback: "Flott! Tid for en lur! 😎 // Класс! Пора вздремнуть!" },
+    { text: "Jeg er glad.", correct: false, feedback: "Glad? Du ser trøtt ut! 😅 // Рад? Ты выглядишь уставшим!" },
+    { text: "Jeg er sulten.", correct: false, feedback: "Sulten? Spis, ikke sov! 😆 // Голоден? Ешь, не спи!" },
+    { text: "Jeg er sint.", correct: false, feedback: "Sint? Slapp av og sov! 😴 // Злой? Расслабься и спи!" }
+  ]},
+  { topic: "general", text: "Hva sier du for å be om hjelp? 🆘", emojis: "🆘🙏", choices: [
+    { text: "Kan du hjelpe meg?", correct: true, feedback: "Perfekt! Hjelpen er på vei! 😊 // Отлично! Помощь уже близко!" },
+    { text: "Kan du se meg?", correct: false, feedback: "Se deg? Vi hjelper, ikke ser! 😅 // Смотреть на тебя? Мы помогаем!" },
+    { text: "Kan du høre meg?", correct: false, feedback: "Høre? Vi trenger handling! 😆 // Слушать? Нам нужна помощь!" },
+    { text: "Kan du ta meg?", correct: false, feedback: "Ta deg? Hvor da? 😴 // Взять тебя? Куда?" }
+  ]},
+  { topic: "general", text: "Du vil si что ты студент. Hva sier du? 🎓", emojis: "🎓📚", choices: [
+    { text: "Jeg er student.", correct: true, feedback: "Bra! Du er på vei til kunnskap! 😎 // Класс! Ты на пути к знаниям!" },
+    { text: "Jeg er lærer.", correct: false, feedback: "Lærer? Ikke ennå! 😅 // Учитель? Пока рано!" },
+    { text: "Jeg er jobb.", correct: false, feedback: "Jobb? Du er ikke arbeid! 😆 // Работа? Ты не работа!" },
+    { text: "Jeg er studie.", correct: false, feedback: "Studie? Du er personen! 😴 // Учёба? Ты человек!" }
+  ]},
+  { topic: "general", text: "Hva er 'tirsdag' på norsk? 📅", emojis: "📅2️⃣", choices: [
+    { text: "Tirsdag", correct: true, feedback: "Riktig! Dag to er klar! 😊 // Верно! Второй день готов!" },
+    { text: "Torsdag", correct: false, feedback: "Torsdag? Feil dag! 😅 // Четверг? Не тот день!" },
+    { text: "Tirdag", correct: false, feedback: "Tirdag? Bokstavfeil! 😆 // Тирдаг? Ошибка в букве!" },
+    { text: "Tirsdager", correct: false, feedback: "Flertall? Bare én dag! 😴 // Множественное число? Один день!" }
+  ]},
+  { topic: "general", text: "Du vil si что у тебя есть кошка. Hva sier du? 🐱", emojis: "🐱🏠", choices: [
+    { text: "Jeg har en katt.", correct: true, feedback: "Flott! Mjau mjau! 😎 // Класс! Мяу-мяу!" },
+    { text: "Jeg er en katt.", correct: false, feedback: "Er du en katt? Purr! 😅 // Ты кошка? Мур!" },
+    { text: "Jeg har katt.", correct: false, feedback: "Mangler 'en'! Prøv igjen! 😆 // Без 'en'! Попробуй ещё!" },
+    { text: "Jeg har katten.", correct: false, feedback: "Katten? Hvilken katt? 😴 // Кошка? Какая кошка?" }
+  ]},
+  { topic: "general", text: "Hva sier du for å spørre om været? ☁️", emojis: "☁️❓", choices: [
+    { text: "Hvordan er været?", correct: true, feedback: "Perfekt! Du snakker som en meteorolog! 😊 // Отлично! Ты как метеоролог!" },
+    { text: "Hvor er været?", correct: false, feedback: "Været er ikke tapt! 😅 // Погода не потерялась!" },
+    { text: "Hva er været?", correct: false, feedback: "Hva? Været er ikke en ting! 😆 // Что? Погода не вещь!" },
+    { text: "Hvem er været?", correct: false, feedback: "Været er ikke en person! 😴 // Погода не человек!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты любишь читать. Hva sier du? 📖", emojis: "📖😊", choices: [
+    { text: "Jeg liker å lese.", correct: true, feedback: "Bra! Bokormen i deg skinner! 😎 // Класс! Книжный червь сияет!" },
+    { text: "Jeg liker å skrive.", correct: false, feedback: "Skrive? Les først! 😅 // Писать? Сначала читай!" },
+    { text: "Jeg liker å høre.", correct: false, feedback: "Høre? Det er for podkaster! 😆 // Слушать? Это для подкастов!" },
+    { text: "Jeg liker å se.", correct: false, feedback: "Se? Det er for TV! 😴 // Смотреть? Это для ТВ!" }
+  ]},
+  { topic: "general", text: "Hva betyr 'grønn' på norsk? 🎨", emojis: "🎨🟢", choices: [
+    { text: "Grønn", correct: true, feedback: "Riktig! Fargen på skogen! 😊 // Верно! Цвет леса!" },
+    { text: "Grønt", correct: false, feedback: "Nesten, men det er en form! 😅 // Почти, но это форма!" },
+    { text: "Gron", correct: false, feedback: "Gron? Ikke et ord! 😆 // Грон? Не слово!" },
+    { text: "Grønne", correct: false, feedback: "Flertall? Bare én farge! 😴 // Множественное число? Один цвет!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты устал. Hva sier du? 😴", emojis: "😴💤", choices: [
+    { text: "Jeg er trøtt.", correct: true, feedback: "Flott! Tid for en lur! 😎 // Класс! Пора вздремнуть!" },
+    { text: "Jeg er glad.", correct: false, feedback: "Glad? Du ser trøtt ut! 😅 // Рад? Ты выглядишь уставшим!" },
+    { text: "Jeg er sulten.", correct: false, feedback: "Sulten? Spis, ikke sov! 😆 // Голоден? Ешь, не спи!" },
+    { text: "Jeg er sint.", correct: false, feedback: "Sint? Slapp av og sov! 😴 // Злой? Расслабься и спи!" }
+  ]},
+  { topic: "general", text: "Hva er 'onsdag' på norsk? 📅", emojis: "📅3️⃣", choices: [
+    { text: "Onsdag", correct: true, feedback: "Riktig! Midt i uken! 😊 // Верно! Середина недели!" },
+    { text: "Onsdager", correct: false, feedback: "Flertall? Bare én dag! 😅 // Множественное число? Один день!" },
+    { text: "Ondsdag", correct: false, feedback: "Ondsdag? Det høres skummelt ut! 😆 // Ондсдаг? Звучит жутко!" },
+    { text: "Onsdg", correct: false, feedback: "Bokstavmangel! Prøv igjen! 😴 // Недостаток букв! Попробуй снова!" }
+  ]},
+  { topic: "general", text: "Du vil si что у тебя есть bil. Hva sier du? 🚗", emojis: "🚗🏠", choices: [
+    { text: "Jeg har en bil.", correct: true, feedback: "Flott! Klar for en kjøretur! 😎 // Класс! Готов к поездке!" },
+    { text: "Jeg er en bil.", correct: false, feedback: "Er du en bil? Vroom! 😅 // Ты машина? Врум!" },
+    { text: "Jeg har bil.", correct: false, feedback: "Mangler 'en'! Prøv igjen! 😆 // Без 'en'! Попробуй ещё!" },
+    { text: "Jeg har bilen.", correct: false, feedback: "Bilen? Hvilken bil? 😴 // Машина? Какая машина?" }
+  ]},
+  { topic: "general", text: "Hva sier du for å spørre om prisen? 💸", emojis: "💸❓", choices: [
+    { text: "Hvor mye koster det?", correct: true, feedback: "Perfekt! Du er klar til å handle! 😊 // Отлично! Готов к покупкам!" },
+    { text: "Hva koster det?", correct: false, feedback: "Nesten, men 'hvor mye' er bedre! 😅 // Почти, но 'hvor mye' лучше!" },
+    { text: "Hvem koster det?", correct: false, feedback: "Hvem? Prisen er ikke person! 😆 // Кто? Цена не человек!" },
+    { text: "Hvorfor koster det?", correct: false, feedback: "Hvorfor? Bare betal! 😴 // Почему? Просто плати!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты любишь å svømme. Hva sier du? 🏊", emojis: "🏊💦", choices: [
+    { text: "Jeg liker å svømme.", correct: true, feedback: "Bra! Dykk rett inn! 😎 // Класс! Ныряй смело!" },
+    { text: "Jeg liker å løpe.", correct: false, feedback: "Løpe? Det er tørt, ikke vått! 😅 // Бегать? Это сухо, не мокро!" },
+    { text: "Jeg liker å fly.", correct: false, feedback: "Fly? Du er ikke en fugl! 😆 // Летать? Ты не птица!" },
+    { text: "Jeg liker å dykke.", correct: false, feedback: "Dykke? Nærme, men svømme først! 😴 // Нырять? Близко, но сперва плавай!" }
+  ]},
+  { topic: "general", text: "Hva betyr 'gul' på norsk? 🎨", emojis: "🎨🟡", choices: [
+    { text: "Gul", correct: true, feedback: "Riktig! Solens farge! 😊 // Верно! Цвет солнца!" },
+    { text: "Gult", correct: false, feedback: "Nesten, men det er en form! 😅 // Почти, но это форма!" },
+    { text: "Gulv", correct: false, feedback: "Gulv? Det er gulvet, ikke farge! 😆 // Пол? Это пол, не цвет!" },
+    { text: "Gule", correct: false, feedback: "Flertall? Bare én farge! 😴 // Множественное число? Один цвет!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты sykelig. Hva sier du? 🤒", emojis: "🤒💊", choices: [
+    { text: "Jeg er syk.", correct: true, feedback: "Uff, bra sagt! Krya på deg! 😎 // Уф, хорошо сказано! Выздоравливай!" },
+    { text: "Jeg er sulten.", correct: false, feedback: "Sulten? Det er mat, ikke medisiner! 😅 // Голоден? Это еда, не лекарства!" },
+    { text: "Jeg er trøtt.", correct: false, feedback: "Trøtt? Sov, ikke host! 😆 // Устал? Спи, не кашляй!" },
+    { text: "Jeg er glad.", correct: false, feedback: "Glad? Du ser ikke så glad ut! 😴 // Рад? Не похоже!" }
+  ]},
+  { topic: "general", text: "Hva er 'fredag' på norsk? 📅", emojis: "📅5️⃣", choices: [
+    { text: "Fredag", correct: true, feedback: "Riktig! Helgen er nær! 😊 // Верно! Выходные близко!" },
+    { text: "Fredager", correct: false, feedback: "Flertall? Bare én dag! 😅 // Множественное число? Один день!" },
+    { text: "Fridag", correct: false, feedback: "Fridag? Det er en fridag, ikke fredag! 😆 // Выходной? Это выходной, не пятница!" },
+    { text: "Fredg", correct: false, feedback: "Bokstavmangel! Prøv igjen! 😴 // Недостаток букв! Попробуй снова!" }
+  ]},
+  { topic: "general", text: "Du vil si что у тебя есть sykkel. Hva sier du? 🚲", emojis: "🚲🏠", choices: [
+    { text: "Jeg har en sykkel.", correct: true, feedback: "Flott! Klar for en sykkeltur! 😎 // Класс! Готов к велопрогулке!" },
+    { text: "Jeg er en sykkel.", correct: false, feedback: "Er du en sykkel? Pedal på! 😅 // Ты велосипед? Крути педали!" },
+    { text: "Jeg har sykkel.", correct: false, feedback: "Mangler 'en'! Prøv igjen! 😆 // Без 'en'! Попробуй ещё!" },
+    { text: "Jeg har sykkelen.", correct: false, feedback: "Sykkelen? Hvilken sykkel? 😴 // Велосипед? Какой велосипед?" }
+  ]},
+  { topic: "general", text: "Hva sier du for å si unnskyld? 😔", emojis: "😔🙏", choices: [
+    { text: "Unnskyld!", correct: true, feedback: "Perfekt! Du er høflig! 😊 // Отлично! Ты вежлив!" },
+    { text: "Takk!", correct: false, feedback: "Takk? Det er feil situasjon! 😅 // Спасибо? Не та ситуация!" },
+    { text: "Vær så snill!", correct: false, feedback: "Vær så snill? Det er for å be! 😆 // Пожалуйста? Это для просьбы!" },
+    { text: "Hei!", correct: false, feedback: "Hei? Ikke tid for hilsen! 😴 // Привет? Не время здороваться!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты любишь å spille spill. Hva sier du? 🎮", emojis: "🎮😊", choices: [
+    { text: "Jeg liker å spille spill.", correct: true, feedback: "Bra! Spillmesteren er her! 😎 // Класс! Мастер игр на месте!" },
+    { text: "Jeg liker å se spill.", correct: false, feedback: "Se? Spill selv! 😅 // Смотреть? Играй сам!" },
+    { text: "Jeg liker å kjøpe spill.", correct: false, feedback: "Kjøpe? Spill først! 😆 // Покупать? Сначала играй!" },
+    { text: "Jeg liker å lage spill.", correct: false, feedback: "Lage? Det er for utviklere! 😴 // Создавать? Это для разработчиков!" }
+  ]},
+  { topic: "general", text: "Hva betyr 'svart' på norsk? 🎨", emojis: "🎨⚫", choices: [
+    { text: "Svart", correct: true, feedback: "Riktig! Fargen på natten! 😊 // Верно! Цвет ночи!" },
+    { text: "Svarts", correct: false, feedback: "Svarts? Ikke et ord! 😅 // Свартс? Не слово!" },
+    { text: "Svarte", correct: false, feedback: "Flertall? Bare én farge! 😆 // Множественное число? Один цвет!" },
+    { text: "Svar", correct: false, feedback: "Svar? Det er svar, ikke farge! 😴 // Ответ? Это ответ, не цвет!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты er tørst. Hva sier du? 🥤", emojis: "🥤😓", choices: [
+    { text: "Jeg er tørst.", correct: true, feedback: "Flott! Tid for vann! 😎 // Класс! Пора пить воду!" },
+    { text: "Jeg er sulten.", correct: false, feedback: "Sulten? Det er mat, ikke drikke! 😅 // Голоден? Это еда, не питьё!" },
+    { text: "Jeg er trøtt.", correct: false, feedback: "Trøtt? Drikk, ikke sov! 😆 // Устал? Пей, не спи!" },
+    { text: "Jeg er glad.", correct: false, feedback: "Glad? Men du er tørst! 😴 // Рад? Но ты хочешь пить!" }
+  ]},
+  { topic: "general", text: "Hva er 'lørdag' på norsk? 📅", emojis: "📅6️⃣", choices: [
+    { text: "Lørdag", correct: true, feedback: "Riktig! Helgen er her! 😊 // Верно! Выходные начались!" },
+    { text: "Lørdager", correct: false, feedback: "Flertall? Bare én dag! 😅 // Множественное число? Один день!" },
+    { text: "Lordag", correct: false, feedback: "Lordag? Bokstavfeil! 😆 // Лордаг? Ошибка в букве!" },
+    { text: "Lørg", correct: false, feedback: "Bokstavmangel! Prøv igjen! 😴 // Недостаток букв! Попробуй снова!" }
+  ]},
+  { topic: "general", text: "Du vil si что у тебя есть hus. Hva sier du? 🏠", emojis: "🏠🔑", choices: [
+    { text: "Jeg har et hus.", correct: true, feedback: "Flott! Huseieren er her! 😎 // Класс! Хозяин дома на месте!" },
+    { text: "Jeg er et hus.", correct: false, feedback: "Er du et hus? Bo i deg selv? 😅 // Ты дом? Живёшь в себе?" },
+    { text: "Jeg har hus.", correct: false, feedback: "Mangler 'et'! Prøv igjen! 😆 // Без 'et'! Попробуй ещё!" },
+    { text: "Jeg har huset.", correct: false, feedback: "Huset? Hvilket hus? 😴 // Дом? Какой дом?" }
+  ]},
+  { topic: "general", text: "Hva sier du for å si at du er kald? 🥶", emojis: "🥶❄️", choices: [
+    { text: "Jeg er kald.", correct: true, feedback: "Perfekt! Ta på en jakke! 😊 // Отлично! Надень куртку!" },
+    { text: "Jeg er varm.", correct: false, feedback: "Varm? Du fryser jo! 😅 // Жарко? Да ты замерзаешь!" },
+    { text: "Jeg er sulten.", correct: false, feedback: "Sulten? Mat varmer ikke! 😆 // Голоден? Еда не греет!" },
+    { text: "Jeg er tørst.", correct: false, feedback: "Tørst? Det hjelper ikke mot kulde! 😴 // Жаждешь? Это не спасёт от холода!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты любишь å lage mat. Hva sier du? 🍳", emojis: "🍳😊", choices: [
+    { text: "Jeg liker å lage mat.", correct: true, feedback: "Bra! Kokken i deg skinner! 😎 // Класс! Повар в тебе сияет!" },
+    { text: "Jeg liker å spise mat.", correct: false, feedback: "Spise? Lag først! 😅 // Есть? Сначала готовь!" },
+    { text: "Jeg liker å kjøpe mat.", correct: false, feedback: "Kjøpe? Det er for latkokker! 😆 // Покупать? Это для ленивых поваров!" },
+    { text: "Jeg liker å se mat.", correct: false, feedback: "Se? Mat er for å spise! 😴 // Смотреть? Еда для еды!" }
+  ]},
+  { topic: "general", text: "Hva betyr 'hvit' på norsk? 🎨", emojis: "🎨⚪", choices: [
+    { text: "Hvit", correct: true, feedback: "Riktig! Fargen på snø! 😊 // Верно! Цвет снега!" },
+    { text: "Hvitt", correct: false, feedback: "Nesten, men det er en form! 😅 // Почти, но это форма!" },
+    { text: "Hvi", correct: false, feedback: "Hvi? Ikke et ord! 😆 // Хви? Не слово!" },
+    { text: "Hvite", correct: false, feedback: "Flertall? Bare én farge! 😴 // Множественное число? Один цвет!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты er fornøyd. Hva sier du? 😊", emojis: "😊👍", choices: [
+    { text: "Jeg er fornøyd.", correct: true, feedback: "Flott! Alt er bra! 😎 // Класс! Всё отлично!" },
+    { text: "Jeg er sint.", correct: false, feedback: "Sint? Smil, det er bedre! 😅 // Злой? Улыбнись, так лучше!" },
+    { text: "Jeg er trøtt.", correct: false, feedback: "Trøtt? Ta en kaffe! 😆 // Устал? Выпей кофе!" },
+    { text: "Jeg er redd.", correct: false, feedback: "Redd? Alt er trygt her! 😴 // Боишься? Тут всё безопасно!" }
+  ]},
+  { topic: "general", text: "Hva er 'søndag' på norsk? 📅", emojis: "📅7️⃣", choices: [
+    { text: "Søndag", correct: true, feedback: "Riktig! Tid for hvile! 😊 // Верно! Время отдыхать!" },
+    { text: "Søndager", correct: false, feedback: "Flertall? Bare én dag! 😅 // Множественное число? Один день!" },
+    { text: "Sondag", correct: false, feedback: "Sondag? Bokstavfeil! 😆 // Сондаг? Ошибка в букве!" },
+    { text: "Søng", correct: false, feedback: "Bokstavmangel! Prøv igjen! 😴 // Недостаток букв! Попробуй снова!" }
+  ]},
+  { topic: "general", text: "Du vil si что у тебя есть telefon. Hva sier du? 📱", emojis: "📱🏠", choices: [
+    { text: "Jeg har en telefon.", correct: true, feedback: "Flott! Klar for å ringe! 😎 // Класс! Готов звонить!" },
+    { text: "Jeg er en telefon.", correct: false, feedback: "Er du en telefon? Ring ring! 😅 // Ты телефон? Динь-динь!" },
+    { text: "Jeg har telefon.", correct: false, feedback: "Mangler 'en'! Prøv igjen! 😆 // Без 'en'! Попробуй ещё!" },
+    { text: "Jeg har telefonen.", correct: false, feedback: "Telefonen? Hvilken telefon? 😴 // Телефон? Какой телефон?" }
+  ]},
+  { topic: "general", text: "Hva sier du for å si at du er varm? 🥵", emojis: "🥵☀️", choices: [
+    { text: "Jeg er varm.", correct: true, feedback: "Perfekt! Ta av jakken! 😊 // Отлично! Снимай куртку!" },
+    { text: "Jeg er kald.", correct: false, feedback: "Kald? Du svetter jo! 😅 // Холодно? Да ты потеешь!" },
+    { text: "Jeg er sulten.", correct: false, feedback: "Sulten? Mat kjøler ikke! 😆 // Голоден? Еда не охладит!" },
+    { text: "Jeg er tørst.", correct: false, feedback: "Tørst? Drikk, ikke svett! 😴 // Жаждешь? Пей, не потей!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты любишь å høre musikk. Hva sier du? 🎶", emojis: "🎶😊", choices: [
+    { text: "Jeg liker å høre musikk.", correct: true, feedback: "Bra! Musikk i ørene! 😎 // Класс! Музыка в ушах!" },
+    { text: "Jeg liker å se musikk.", correct: false, feedback: "Se? Musikk høres! 😅 // Смотреть? Музыку слушают!" },
+    { text: "Jeg liker å spille musikk.", correct: false, feedback: "Spille? Hør først! 😆 // Играть? Сначала слушай!" },
+    { text: "Jeg liker å kjøpe musikk.", correct: false, feedback: "Kjøpe? Hør gratis! 😴 // Покупать? Слушай бесплатно!" }
+  ]},
+  { topic: "general", text: "Hva betyr 'brun' på norsk? 🎨", emojis: "🎨🟤", choices: [
+    { text: "Brun", correct: true, feedback: "Riktig! Fargen på fjellene! 😊 // Верно! Цвет гор!" },
+    { text: "Brunt", correct: false, feedback: "Nesten, men det er en form! 😅 // Почти, но это форма!" },
+    { text: "Bru", correct: false, feedback: "Bru? Det er en bro! 😆 // Бру? Это мост!" },
+    { text: "Brune", correct: false, feedback: "Flertall? Bare én farge! 😴 // Множественное число? Один цвет!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты er redd. Hva sier du? 😨", emojis: "😨👻", choices: [
+    { text: "Jeg er redd.", correct: true, feedback: "Uff, bra sagt! Ingen spøkelser her! 😎 // Уф, хорошо сказано! Привидений тут нет!" },
+    { text: "Jeg er glad.", correct: false, feedback: "Glad? Du ser redd ut! 😅 // Рад? Ты выглядишь напуганным!" },
+    { text: "Jeg er sulten.", correct: false, feedback: "Sulten? Frykt spiser ikke! 😆 // Голоден? Страх не еда!" },
+    { text: "Jeg er tørst.", correct: false, feedback: "Tørst? Vann hjelper ikke mot spøkelser! 😴 // Жаждешь? Вода не спасёт от страха!" }
+  ]},
+  { topic: "general", text: "Hva er 'torsdag' på norsk? 📅", emojis: "📅4️⃣", choices: [
+    { text: "Torsdag", correct: true, feedback: "Riktig! Nesten helg! 😊 // Верно! Почти выходные!" },
+    { text: "Torsdager", correct: false, feedback: "Flertall? Bare én dag! 😅 // Множественное число? Один день!" },
+    { text: "Tordag", correct: false, feedback: "Tordag? Bokstavfeil! 😆 // Тордаг? Ошибка в букве!" },
+    { text: "Torsg", correct: false, feedback: "Bokstavmangel! Prøv igjen! 😴 // Недостаток букв! Попробуй снова!" }
+  ]},
+  { topic: "general", text: "Du vil si что у тебя есть datamaskin. Hva sier du? 💻", emojis: "💻🏠", choices: [
+    { text: "Jeg har en datamaskin.", correct: true, feedback: "Flott! Klar for koding! 😎 // Класс! Готов кодировать!" },
+    { text: "Jeg er en datamaskin.", correct: false, feedback: "Er du en datamaskin? Beep boop! 😅 // Ты компьютер? Бип-буп!" },
+    { text: "Jeg har datamaskin.", correct: false, feedback: "Mangler 'en'! Prøv igjen! 😆 // Без 'en'! Попробуй ещё!" },
+    { text: "Jeg har datamaskinen.", correct: false, feedback: "Datamaskinen? Hvilken datamaskin? 😴 // Компьютер? Какой компьютер?" }
+  ]},
+  { topic: "general", text: "Hva sier du for å si at du er sulten? 🍽️", emojis: "🍽️😩", choices: [
+    { text: "Jeg er sulten.", correct: true, feedback: "Perfekt! Tid for mat! 😊 // Отлично! Пора поесть!" },
+    { text: "Jeg er tørst.", correct: false, feedback: "Tørst? Det er drikke, ikke mat! 😅 // Жаждешь? Это про питье, не еду!" },
+    { text: "Jeg er trøtt.", correct: false, feedback: "Trøtt? Gå og sov, ikke spis! 😆 // Устал? Спи, а не ешь!" },
+    { text: "Jeg er sult.", correct: false, feedback: "Sult? Du er ikke sultenhet selv! 😴 // Голод? Ты не сам голод!" }
+  ]},
+  { topic: "general", text: "Du vil si что ты любишь å danse. Hva sier du? 💃", emojis: "💃😊", choices: [
+    { text: "Jeg liker å danse.", correct: true, feedback: "Bra! Dans som en stjerne! 😎 // Класс! Танцуй как звезда!" },
+    { text: "Jeg liker å synge.", correct: false, feedback: "Synge? Dans først! 😅 // Петь? Сначала танцуй!" },
+    { text: "Jeg liker å løpe.", correct: false, feedback: "Løpe? Det er ikke dans! 😆 // Бегать? Это не танцы!" },
+    { text: "Jeg liker å se.", correct: false, feedback: "Se? Dans selv! 😴 // Смотреть? Танцуй сам!" }
+  ]},
+  { topic: "general", text: "Hva betyr 'rosa' på norsk? 🎨", emojis: "🎨🌸", choices: [
+    { text: "Rosa", correct: true, feedback: "Riktig! Fargen på blomster! 😊 // Верно! Цвет цветов!" },
+    { text: "Ros", correct: false, feedback: "Ros? Det er ros, ikke farge! 😅 // Роза? Это похвала, не цвет!" },
+    { text: "Rose", correct: false, feedback: "Rose? Det er en blomst! 😆 // Роза? Это цветок!" },
+    { text: "Rosae", correct: false, feedback: "Rosae? Latin eller norsk? 😴 // Розаэ? Латынь или норвежский?" }
+  ]},
+  { topic: "general", text: "Du vil si что ты er glad i noen. Hva sier du? ❤️", emojis: "❤️😊", choices: [
+    { text: "Jeg er glad i deg.", correct: true, feedback: "Flott! Kjærlighet på norsk! 😎 // Класс! Любовь по-норвежски!" },
+    { text: "Jeg er glad for deg.", correct: false, feedback: "For? Det er noe annet! 😅 // Для? Это другое!" },
+    { text: "Jeg er glad med deg.", correct: false, feedback: "Med? Nærme, men ikke helt! 😆 // С? Близко, но не то!" },
+    { text: "Jeg er glad på deg.", correct: false, feedback: "På? Det høres rart ut! 😴 // На? Звучит странно!" }
+  ]},
+  // Work (20 вопросов)
+  { topic: "work", text: "Du vil si at du jobber som lærer. Hva sier du? 👩‍🏫", emojis: "👩‍🏫💼", choices: [
+    { text: "Jeg jobber som lærer.", correct: true, feedback: "Perfekt! Du former fremtiden! 😊 // Отлично! Ты формируешь будущее!" },
+    { text: "Jeg er lærer jobber.", correct: false, feedback: "Rart ordstilling! Prøv igjen! 😅 // Странный порядок слов!" },
+    { text: "Jeg jobber lærer.", correct: false, feedback: "Lærer er ikke verb! 😆 // Учитель — не глагол!" },
+    { text: "Jeg jobber på lærer.", correct: false, feedback: "På lærer? Det er ikke et sted! 😴 // На учителе? Это не место!" }
+  ]},
+  { topic: "work", text: "Du vil spørre når jobben starter. Hva sier du? ⏰", emojis: "⏰💼", choices: [
+    { text: "Når starter jobben?", correct: true, feedback: "Bra! Klar for arbeid! 😎 // Класс! Готов к работе!" },
+    { text: "Hvor starter jobben?", correct: false, feedback: "Hvor? Det er tid, ikke sted! 😅 // Где? Это про время, не место!" },
+    { text: "Hva starter jobben?", correct: false, feedback: "Hva? Jobben er ikke en ting! 😆 // Что? Работа не вещь!" },
+    { text: "Hvem starter jobben?", correct: false, feedback: "Hvem? Det er deg! 😴 // Кто? Это ты!" }
+  ]},
+  { topic: "work", text: "Du vil si at du liker jobben din. Hva sier du? 😊", emojis: "😊💼", choices: [
+    { text: "Jeg liker jobben min.", correct: true, feedback: "Flott! Du er en arbeidsstjerne! 😊 // Отлично! Ты звезда работы!" },
+    { text: "Jeg liker arbeidet mitt.", correct: false, feedback: "Nesten, men 'jobben' er bedre! 😅 // Почти, но 'jobben' лучше!" },
+    { text: "Jeg liker jobb.", correct: false, feedback: "Jobb? Legg til 'min'! 😆 // Работа? Добавь 'min'!" },
+    { text: "Jeg liker på jobben.", correct: false, feedback: "På jobben? Det er et sted! 😴 // На работе? Это место!" }
+  ]},
+  { topic: "work", text: "Hva sier du for å be om en fridag? 🏖️", emojis: "🏖️🙏", choices: [
+    { text: "Kan jeg få en fridag?", correct: true, feedback: "Perfekt! Tid for strand! 😎 // Отлично! Пора на пляж!" },
+    { text: "Kan jeg få fri dag?", correct: false, feedback: "Nesten, men 'fridag' er ett ord! 😅 // Почти, но 'fridag' — одно слово!" },
+    { text: "Kan jeg få ferie?", correct: false, feedback: "Ferie? Det er lengre enn en dag! 😆 // Отпуск? Это дольше дня!" },
+    { text: "Kan jeg få pause?", correct: false, feedback: "Pause? Det er bare fem minutter! 😴 // Перерыв? Это всего пять минут!" }
+  ]},
+  { topic: "work", text: "Du vil si что ты работаешь дома. Hva sier du? 🏠", emojis: "🏠💻", choices: [
+    { text: "Jeg jobber hjemme.", correct: true, feedback: "Bra! Hjemmekontor er best! 😊 // Класс! Домашний офис рулит!" },
+    { text: "Jeg jobber i hjemmet.", correct: false, feedback: "I hjemmet? Litt for formelt! 😅 // В доме? Слишком формально!" },
+    { text: "Jeg jobber på hjemme.", correct: false, feedback: "På hjemme? Det er ikke riktig! 😆 // На доме? Неправильно!" },
+    { text: "Jeg jobber hjem.", correct: false, feedback: "Hjem? Legg til en preposisjon! 😴 // Дом? Добавь предлог!" }
+  ]},
+  { topic: "work", text: "Du vil si at du jobber heltid. Hva sier du? ⏰", emojis: "⏰💼", choices: [
+    { text: "Jeg jobber heltid.", correct: true, feedback: "Flott! Full innsats! 😎 // Класс! Полная отдача!" },
+    { text: "Jeg jobber deltid.", correct: false, feedback: "Deltid? Nei, du er fullt på! 😅 // Частичная занятость? Нет, ты на полную!" },
+    { text: "Jeg jobber tid.", correct: false, feedback: "Tid? Det er ikke en jobb! 😆 // Время? Это не работа!" },
+    { text: "Jeg jobber på tid.", correct: false, feedback: "På tid? Det høres rart ut! 😴 // На время? Странно звучит!" }
+  ]},
+  { topic: "work", text: "Du vil spørre om en kollega kan hjelpe. Hva sier du? 🤝", emojis: "🤝💼", choices: [
+    { text: "Kan du hjelpe meg?", correct: true, feedback: "Perfekt! Teamarbeid rocks! 😊 // Отлично! Командная работа рулит!" },
+    { text: "Kan du se meg?", correct: false, feedback: "Se? Vi trenger hjelp, ikke øyne! 😅 // Смотреть? Нужна помощь, не взгляд!" },
+    { text: "Kan du høre meg?", correct: false, feedback: "Høre? Hjelp med hendene! 😆 // Слушать? Помогай руками!" },
+    { text: "Kan du ta meg?", correct: false, feedback: "Ta meg? Hvor da? 😴 // Взять меня? Куда?" }
+  ]},
+  { topic: "work", text: "Du vil si что du er på møte. Hva sier du? 📊", emojis: "📊💼", choices: [
+    { text: "Jeg er på møte.", correct: true, feedback: "Bra! Du er i møte-modus! 😎 // Класс! Ты в режиме собрания!" },
+    { text: "Jeg er i møte.", correct: false, feedback: "I møte? Nærme, men 'på' er bedre! 😅 // В собрании? Близко, но 'på' лучше!" },
+    { text: "Jeg er møte.", correct: false, feedback: "Møte? Du er ikke et møte! 😆 // Собрание? Ты не собрание!" },
+    { text: "Jeg er på jobb.", correct: false, feedback: "På jobb? Spesifiser møtet! 😴 // На работе? Уточни про собрание!" }
+  ]},
+  { topic: "work", text: "Du vil si что du jobber i en butikk. Hva sier du? 🏬", emojis: "🏬💼", choices: [
+    { text: "Jeg jobber i en butikk.", correct: true, feedback: "Flott! Du selger som en proff! 😊 // Класс! Ты продаёшь как профи!" },
+    { text: "Jeg jobber på butikk.", correct: false, feedback: "På butikk? Det er 'i' her! 😅 // На магазине? Тут 'i'!" },
+    { text: "Jeg jobber butikk.", correct: false, feedback: "Butikk? Legg til preposisjon! 😆 // Магазин? Добавь предлог!" },
+    { text: "Jeg er butikk.", correct: false, feedback: "Er du en butikk? Selger du deg selv? 😴 // Ты магазин? Продаёшь себя?" }
+  ]},
+  { topic: "work", text: "Du vil si at du har en pause. Hva sier du? ☕", emojis: "☕💼", choices: [
+    { text: "Jeg har pause.", correct: true, feedback: "Perfekt! Tid for kaffe! 😎 // Отлично! Пора пить кофе!" },
+    { text: "Jeg har fridag.", correct: false, feedback: "Fridag? Det er en hel dag! 😅 // Выходной? Это целый день!" },
+    { text: "Jeg har møte.", correct: false, feedback: "Møte? Nei, det er pause! 😆 // Собрание? Нет, это перерыв!" },
+    { text: "Jeg har jobb.", correct: false, feedback: "Jobb? Slapp av litt! 😴 // Работа? Расслабься!" }
+  ]},
+  { topic: "work", text: "Du vil spørre hvor kontoret er. Hva sier du? 🏢", emojis: "🏢❓", choices: [
+    { text: "Hvor er kontoret?", correct: true, feedback: "Bra! Du finner veien! 😊 // Класс! Ты найдёшь дорогу!" },
+    { text: "Hva er kontoret?", correct: false, feedback: "Hva? Kontoret er ikke en gåte! 😅 // Что? Офис не загадка!" },
+    { text: "Hvem er kontoret?", correct: false, feedback: "Hvem? Kontoret er ikke en person! 😆 // Кто? Офис не человек!" },
+    { text: "Hvorfor er kontoret?", correct: false, feedback: "Hvorfor? Bare finn det! 😴 // Почему? Просто найди!" }
+  ]},
+  { topic: "work", text: "Du vil si что du jobber som kokk. Hva sier du? 🍳", emojis: "🍳💼", choices: [
+    { text: "Jeg jobber som kokk.", correct: true, feedback: "Flott! Kokken i deg lager mesterverk! 😎 // Класс! Повар в тебе творит шедевры!" },
+    { text: "Jeg er kokk jobber.", correct: false, feedback: "Rart ordstilling! Prøv igjen! 😅 // Странный порядок слов!" },
+    { text: "Jeg jobber kokk.", correct: false, feedback: "Kokk er ikke verb! 😆 // Повар — не глагол!" },
+    { text: "Jeg jobber på kokk.", correct: false, feedback: "På kokk? Det er ikke et sted! 😴 // На поваре? Это не место!" }
+  ]},
+  { topic: "work", text: "Du vil si что du er på jobb nå. Hva sier du? 💼", emojis: "💼⏰", choices: [
+    { text: "Jeg er på jobb.", correct: true, feedback: "Bra! Fullt fokus! 😊 // Класс! Полная концентрация!" },
+    { text: "Jeg er i jobb.", correct: false, feedback: "I jobb? Nærme, men 'på' er bedre! 😅 // В работе? Близко, но 'på' лучше!" },
+    { text: "Jeg er jobb.", correct: false, feedback: "Jobb? Du er ikke arbeid! 😆 // Работа? Ты не работа!" },
+    { text: "Jeg er på møte.", correct: false, feedback: "Møte? Du er på jobb! 😴 // Собрание? Ты на работе!" }
+  ]},
+  { topic: "work", text: "Du vil spørre om lønn. Hva sier du? 💰", emojis: "💰❓", choices: [
+    { text: "Hva er lønnen?", correct: true, feedback: "Perfekt! Penger snakker! 😎 // Отлично! Деньги говорят!" },
+    { text: "Hvor er lønnen?", correct: false, feedback: "Hvor? Lønnen er ikke tapt! 😅 // Где? Зарплата не потерялась!" },
+    { text: "Hvem er lønnen?", correct: false, feedback: "Hvem? Lønnen er ikke en person! 😆 // Кто? Зарплата не человек!" },
+    { text: "Hvorfor er lønnen?", correct: false, feedback: "Hvorfor? Bare spør om summen! 😴 // Почему? Просто спроси сумму!" }
+  ]},
+  { topic: "work", text: "Du vil si что du liker å jobbe i team. Hva sier du? 🤝", emojis: "🤝💼", choices: [
+    { text: "Jeg liker å jobbe i team.", correct: true, feedback: "Flott! Teamarbeid er best! 😊 // Класс! Командная работа рулит!" },
+    { text: "Jeg liker å jobbe alene.", correct: false, feedback: "Alene? Team er morsommere! 😅 // Один? Команда веселее!" },
+    { text: "Jeg liker å jobbe på team.", correct: false, feedback: "På team? Det er 'i' her! 😆 // На команде? Тут 'i'!" },
+    { text: "Jeg liker å jobbe med team.", correct: false, feedback: "Med team? Nærme, men ikke helt! 😴 // С командой? Близко, но не то!" }
+  ]},
+  { topic: "work", text: "Du vil si что du jobber på et sykehus. Hva sier du? 🏥", emojis: "🏥💼", choices: [
+    { text: "Jeg jobber på et sykehus.", correct: true, feedback: "Bra! Du hjelper folk! 😎 // Класс! Ты помогаешь людям!" },
+    { text: "Jeg jobber i sykehus.", correct: false, feedback: "I sykehus? Det er 'på' her! 😅 // В больнице? Тут 'på'!" },
+    { text: "Jeg jobber sykehus.", correct: false, feedback: "Sykehus? Legg til preposisjon! 😆 // Больница? Добавь предлог!" },
+    { text: "Jeg er sykehus.", correct: false, feedback: "Er du sykehus? Hjelper du deg selv? 😴 // Ты больница? Лечишь себя?" }
+  ]},
+  { topic: "work", text: "Du vil si что du har et møte klokken ti. Hva sier du? 📅", emojis: "📅⏰", choices: [
+    { text: "Jeg har et møte klokken ti.", correct: true, feedback: "Flott! Punktlig som en nordmann! 😊 // Класс! Пунктуален как норвежец!" },
+    { text: "Jeg har møte klokken ti.", correct: false, feedback: "Mangler 'et'! Prøv igjen! 😅 // Без 'et'! Попробуй ещё!" },
+    { text: "Jeg er møte klokken ti.", correct: false, feedback: "Er du møte? Du deltar! 😆 // Ты собрание? Ты участвуешь!" },
+    { text: "Jeg har møtet klokken ti.", correct: false, feedback: "Møtet? Hvilket møte? 😴 // Собрание? Какое собрание?" }
+  ]},
+  { topic: "work", text: "Du vil spørre om sjefen er her. Hva sier du? 👨‍💼", emojis: "👨‍💼❓", choices: [
+    { text: "Er sjefen her?", correct: true, feedback: "Perfekt! Du finner sjefen! 😎 // Отлично! Ты найдёшь босса!" },
+    { text: "Hvor er sjefen?", correct: false, feedback: "Hvor? Spør om han er her! 😅 // Где? Спроси, тут ли он!" },
+    { text: "Hva er sjefen?", correct: false, feedback: "Hva? Sjefen er ikke en gåte! 😆 // Что? Босс не загадка!" },
+    { text: "Hvem er sjefen?", correct: false, feedback: "Hvem? Du vet hvem han er! 😴 // Кто? Ты знаешь, кто он!" }
+  ]},
+  { topic: "work", text: "Du vil si что du jobber som lege. Hva sier du? 🩺", emojis: "🩺💼", choices: [
+    { text: "Jeg jobber som lege.", correct: true, feedback: "Flott! Du leger folk! 😊 // Класс! Ты лечишь людей!" },
+    { text: "Jeg er lege jobber.", correct: false, feedback: "Rart ordstilling! Prøv igjen! 😅 // Странный порядок слов!" },
+    { text: "Jeg jobber lege.", correct: false, feedback: "Lege er ikke verb! 😆 // Врач — не глагол!" },
+    { text: "Jeg jobber på lege.", correct: false, feedback: "På lege? Det er ikke et sted! 😴 // На враче? Это не место!" }
+  ]},
+  { topic: "work", text: "Du vil si что du liker å hjelpe kunder. Hva sier du? 😊", emojis: "😊🛍️", choices: [
+    { text: "Jeg liker å hjelpe kunder.", correct: true, feedback: "Bra! Kunden er konge! 😎 // Класс! Клиент — король!" },
+    { text: "Jeg liker å se kunder.", correct: false, feedback: "Se? Hjelp dem i stedet! 😅 // Смотреть? Помогай им!" },
+    { text: " Jeg liker å snakke kunder.", correct: false, feedback: "Snakke? Hjelp er bedre! 😆 // Говорить? Помощь лучше!" },
+    { text: "Jeg liker å ignorere kunder.", correct: false, feedback: "Ignorere? Dårlig service! 😴 // Игнорировать? Плохой сервис!" }
+  ]},
+  { topic: "work", text: "Du vil si что du jobber på en skole. Hva sier du? 🏫", emojis: "🏫💼", choices: [
+    { text: "Jeg jobber på en skole.", correct: true, feedback: "Flott! Du lærer bort kunnskap! 😊 // Класс! Ты передаёшь знания!" },
+    { text: "Jeg jobber i skole.", correct: false, feedback: "I skole? Det er 'på' her! 😅 // В школе? Тут 'på'!" },
+    { text: "Jeg jobber skole.", correct: false, feedback: "Skole? Legg til preposisjon! 😆 // Школа? Добавь предлог!" },
+    { text: "Jeg er skole.", correct: false, feedback: "Er du skole? Underviser du deg selv? 😴 // Ты школа? Учишь себя?" }
+  ]},
+  // Social (15 вопросов)
+  { topic: "social", text: "Du vil invitere noen til en fest. Hva sier du? 🎉", emojis: "🎉👥", choices: [
+    { text: "Vil du komme på fest?", correct: true, feedback: "Perfekt! Festen starter nå! 😎 // Отлично! Вечеринка начинается!" },
+    { text: "Vil du gå på fest?", correct: false, feedback: "Gå? Det er invitasjon, ikke tur! 😅 // Идти? Это приглашение, не прогулка!" },
+    { text: "Vil du ha fest?", correct: false, feedback: "Ha fest? Du er verten! 😆 // Устроить вечеринку? Ты хозяин!" },
+    { text: "Vil du se fest?", correct: false, feedback: "Se fest? Det er ikke TV! 😴 // Смотреть вечеринку? Это не ТВ!" }
+  ]},
+  { topic: "social", text: "Du vil si at du er enig med noen. Hva sier du? 🤝", emojis: "🤝😊", choices: [
+    { text: "Jeg er enig.", correct: true, feedback: "Bra! Harmoni oppnådd! 😊 // Класс! Гармония достигнута!" },
+    { text: "Jeg er enig med.", correct: false, feedback: "Med? Du mangler noe! 😅 // С? Чего-то не хватает!" },
+    { text: "Jeg er enig på.", correct: false, feedback: "På? Det er ikke et sted! 😆 // На? Это не место!" },
+    { text: "Jeg er enig i.", correct: false, feedback: "I? Det høres rart ut! 😴 // В? Странно звучит!" }
+  ]},
+  { topic: "social", text: "Du vil spørre hva noen synes om noe. Hva sier du? 🤔", emojis: "🤔🗣️", choices: [
+    { text: "Hva synes du om det?", correct: true, feedback: "Flott! Du starter en samtale! 😎 // Класс! Ты начинаешь разговор!" },
+    { text: "Hva ser du om det?", correct: false, feedback: "Ser? Det er meninger, ikke bilder! 😅 // Смотришь? Это мнения, не картинки!" },
+    { text: "Hva hører du om det?", correct: false, feedback: "Hører? Det er ikke radio! 😆 // Слышишь? Это не радио!" },
+    { text: "Hva vet du om det?", correct: false, feedback: "Vet? Vi spør om meninger! 😴 // Знаешь? Мы про мнения!" }
+  ]},
+  { topic: "social", text: "Du vil si что du liker å møte venner. Hva sier du? 👥", emojis: "👥😊", choices: [
+    { text: "Jeg liker å møte venner.", correct: true, feedback: "Perfekt! Sosial stjerne! 😎 // Отлично! Социальная звезда!" },
+    { text: "Jeg liker å se venner.", correct: false, feedback: "Se? Møt dem i stedet! 😅 // Смотреть? Встречай их!" },
+    { text: "Jeg liker å snakke venner.", correct: false, feedback: "Snakke? Møt først! 😆 // Говорить? Сначала встреть!" },
+    { text: "Jeg liker å ignorere venner.", correct: false, feedback: "Ignorere? Ikke vennlig! 😴 // Игнорировать? Не дружелюбно!" }
+  ]}
+  ];
+
+
+
+
+
+
+
+    
+
+  let currentScenarioIndex = 0;
+  let score = 0;
+  let selectedScenarios = [];
+  let totalQuestions = 50;
+  let timerEnabled = false;
+  let timeLimit = 15;
+  let timerInterval = null;
+  let currentTime = 0;
+  let topic = 'general';
+
+  const correctSound = document.getElementById('correct-sound');
+  const wrongSound = document.getElementById('wrong-sound');
+  const sprite = document.getElementById('sprite');
+
+  // Toggle timer input visibility
+  document.getElementById('timer-toggle').addEventListener('change', function() {
+    document.getElementById('timer-input').classList.toggle('hidden', !this.checked);
+  });
+
+  // Start game
+  document.getElementById('start-button').addEventListener('click', () => {
+    topic = document.getElementById('topic').value;
+    totalQuestions = Math.min(Math.max(parseInt(document.getElementById('num-questions').value) || 50, 1), 50);
+    timerEnabled = document.getElementById('timer-toggle').checked;
+    timeLimit = timerEnabled ? Math.min(Math.max(parseInt(document.getElementById('time-limit').value) || 15, 5), 60) : 15;
+
+    // Filter scenarios based on topic
+    let availableScenarios = scenarios;
+    if (topic !== 'general') {
+      availableScenarios = scenarios.filter(s => s.topic === topic);
+    }
+    if (availableScenarios.length === 0) {
+      alert('No scenarios available for this topic. Try another.');
+      return;
+    }
+    // Repeat scenarios if not enough to meet totalQuestions
+    while (availableScenarios.length < totalQuestions) {
+      availableScenarios = availableScenarios.concat(availableScenarios);
+    }
+    selectedScenarios = shuffle(availableScenarios).slice(0, totalQuestions);
+
+    currentScenarioIndex = 0;
+    score = 0;
+    document.getElementById('score-value').textContent = score;
+    document.getElementById('menu-container').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+    loadScenario();
+  });
+
+  // Shuffle array
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  // Load scenario
+  function loadScenario() {
+    if (currentScenarioIndex >= selectedScenarios.length) {
+      endGame();
+      return;
+    }
+
+    const scenario = selectedScenarios[currentScenarioIndex];
+    document.getElementById('scenario').textContent = scenario.text;
+    document.getElementById('scenario-emojis').textContent = scenario.emojis;
+    document.getElementById('progress-text').textContent = `Question ${currentScenarioIndex + 1}/${selectedScenarios.length}`;
+    document.getElementById('progress').style.width = `${((currentScenarioIndex + 1) / selectedScenarios.length) * 100}%`;
+
+    const choicesDiv = document.getElementById('choices');
+    choicesDiv.innerHTML = '';
+    shuffle(scenario.choices).forEach(choice => {
+      const button = document.createElement('button');
+      button.className = 'w-full bg-gray-200 py-2 rounded hover:bg-gray-300';
+      button.textContent = choice.text;
+      button.addEventListener('click', () => handleChoice(choice));
+      choicesDiv.appendChild(button);
+    });
+
+    document.getElementById('feedback').classList.add('hidden');
+    document.getElementById('next-button').classList.add('hidden');
+    sprite.textContent = '🧑‍🎓';
+
+    if (timerEnabled) {
+      currentTime = timeLimit;
+      document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
+      document.getElementById('timer-display').classList.remove('hidden');
+      startTimer();
+    }
+  }
+
+  // Handle choice
+  function handleChoice(choice) {
+    clearInterval(timerInterval);
+    document.getElementById('timer-display').classList.add('hidden');
+    const feedback = document.getElementById('feedback');
+    feedback.textContent = choice.feedback;
+    feedback.classList.remove('hidden');
+
+    if (choice.correct) {
+      score += 10;
+      document.body.classList.add('flash-green');
+      sprite.textContent = '😎';
+      correctSound.play().catch(() => {});
+      setTimeout(() => document.body.classList.remove('flash-green'), 500);
+    } else {
+      score -= 5;
+      document.body.classList.add('shake');
+      sprite.textContent = '😅';
+      wrongSound.play().catch(() => {});
+      setTimeout(() => document.body.classList.remove('shake'), 500);
+    }
+
+    if (score < -10) score = -10;
+    document.getElementById('score-value').textContent = score;
+    document.getElementById('next-button').classList.remove('hidden');
+
+    if (score <= -10) {
+      endGame();
+    }
+  }
+
+  // Start timer
+  function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      currentTime--;
+      document.getElementById('timer-display').textContent = `Time: ${currentTime}s`;
+      if (currentTime <= 0) {
+        clearInterval(timerInterval);
+        score -= 2;
+        if (score < -10) score = -10;
+        document.getElementById('score-value').textContent = score;
+        document.getElementById('feedback').textContent = 'Time’s up! -2 points 😓';
+        document.getElementById('feedback').classList.remove('hidden');
+        document.getElementById('next-button').classList.remove('hidden');
+        sprite.textContent = '😓';
+        wrongSound.play().catch(() => {});
+        if (score <= -10) {
+          endGame();
+        }
+      }
+    }, 1000);
+  }
+
+  // Next scenario
+  document.getElementById('next-button').addEventListener('click', () => {
+    currentScenarioIndex++;
+    loadScenario();
+  });
+
+  // End game
+  function endGame() {
+    clearInterval(timerInterval);
+    document.getElementById('game-container').classList.add('hidden');
+    document.getElementById('game-over').classList.remove('hidden');
+    const message = score <= -10
+      ? `Game Over! Score: ${score}. Too many mistakes! 😢 Try again?`
+      : `Game Over! Final Score: ${score}. Great job! 🎉 Play again?`;
+    document.getElementById('game-over-message').textContent = message;
+  }
+
+  // Restart game
+  document.getElementById('restart-button').addEventListener('click', () => {
+    currentScenarioIndex = 0;
+    score = 0;
+    document.getElementById('score-value').textContent = score;
+    document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('menu-container').classList.remove('hidden');
+  });
+  </script>
+</body>
+</html>
